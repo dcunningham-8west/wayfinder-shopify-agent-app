@@ -1,0 +1,50 @@
+{%- comment -%}
+  PROTOTYPE — per-section merchandise emitter (ticket 005).
+
+  This is the piece an app embed block cannot do: it runs *inside* a section, so it knows
+  exactly which products that section rendered, in order, after limits and availability.
+
+  Rendered with the same product list the section loops over, so it cannot drift from what
+  the shopper sees.
+
+    {% render 'agent-section-context',
+       section: section,
+       kind: 'featured-collection',
+       label: section.settings.title,
+       collection: section.settings.collection,
+       products: section.settings.collection.products,
+       limit: section.settings.products_to_show %}
+{%- endcomment -%}
+
+<script
+  type='application/json'
+  class='agent-section-context'
+  data-section-id='{{ section.id }}'
+>
+  {
+    "section_id": {{ section.id | json }},
+    "dom_id": {{ 'shopify-section-' | append: section.id | json }},
+    "kind": {{ kind | json }},
+    "label": {{ label | json }},
+    {%- if collection -%}
+      "collection": {
+        "id": {{ collection.id | json }},
+        "handle": {{ collection.handle | json }},
+        "title": {{ collection.title | json }},
+        "total_products": {{ collection.all_products_count | json }}
+      },
+    {%- endif -%}
+    "visible_products": [
+      {%- for product in products limit: limit -%}
+        {
+          "position": {{ forloop.index | json }},
+          "id": {{ product.id | json }},
+          "handle": {{ product.handle | json }},
+          "title": {{ product.title | json }},
+          "price": {{ product.price | json }},
+          "available": {{ product.available | json }}
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]
+  }
+</script>

@@ -1,0 +1,77 @@
+{%- comment -%}
+  PROTOTYPE — page context emitter (ticket 005).
+
+  Rendered once from theme.liquid. Emits template-level page state from Liquid globals,
+  which is authoritative at render time: no DOM scraping, no inference.
+
+  Identity only. Enough for the agent to speak naturally (title) and to look a product up
+  (id, handle). Descriptions, metafields, and full variant trees stay in the catalogue.
+{%- endcomment -%}
+
+<script type='application/json' id='agent-page-context'>
+  {
+    "template": {{ template.name | json }},
+    "suffix": {{ template.suffix | json }},
+    "url": {{ request.path | json }},
+    "title": {{ page_title | json }},
+
+    {%- case template.name -%}
+      {%- when 'product' -%}
+        "focus": {
+          "kind": "product",
+          "id": {{ product.id | json }},
+          "handle": {{ product.handle | json }},
+          "title": {{ product.title | json }},
+          "vendor": {{ product.vendor | json }},
+          "available": {{ product.available | json }},
+          "price_min": {{ product.price_min | json }},
+          "price_max": {{ product.price_max | json }},
+          "selected_variant_id": {{ product.selected_or_first_available_variant.id | json }},
+          "options": [
+            {%- for option in product.options_with_values -%}
+              {
+                "name": {{ option.name | json }},
+                "values": [{% for v in option.values %}{{ v | json }}{% unless forloop.last %},{% endunless %}{% endfor %}],
+                "selected": {{ option.selected_value | json }}
+              }{% unless forloop.last %},{% endunless %}
+            {%- endfor -%}
+          ]
+        },
+
+      {%- when 'collection' -%}
+        "focus": {
+          "kind": "collection",
+          "id": {{ collection.id | json }},
+          "handle": {{ collection.handle | json }},
+          "title": {{ collection.title | json }},
+          "total_products": {{ collection.all_products_count | json }},
+          "current_page": {{ current_page | default: 1 | json }},
+          "applied_filters": [
+            {%- for filter in collection.filters -%}
+              {%- for value in filter.active_values -%}
+                { "filter": {{ filter.label | json }}, "value": {{ value.label | json }} }
+                {%- unless forloop.last %},{% endunless -%}
+              {%- endfor -%}
+              {%- unless forloop.last %}{% if filter.active_values.size > 0 %},{% endif %}{% endunless -%}
+            {%- endfor -%}
+          ]
+        },
+
+      {%- when 'search' -%}
+        "focus": {
+          "kind": "search",
+          "terms": {{ search.terms | json }},
+          "results_count": {{ search.results_count | json }}
+        },
+
+      {%- when 'cart' -%}
+        "focus": { "kind": "cart" },
+    {%- endcase -%}
+
+    "cart": {
+      "token": {{ cart.token | json }},
+      "item_count": {{ cart.item_count | json }},
+      "currency": {{ cart.currency.iso_code | json }}
+    }
+  }
+</script>

@@ -1,0 +1,28 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Shopify CLI
+.shopify/
+packages/theme/.shopify/
+
+# Node
+node_modules/
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+packages/*/dist/
+
+# Generated from contracts — regenerate, never edit by hand
+packages/contracts/generated/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
