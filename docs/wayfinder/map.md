@@ -13,6 +13,11 @@ page (not checkout), voice via RetellAI, able to answer catalogue questions, ans
 questions about what is on screen, drive the storefront UI, and read/write the shopper's
 existing cart. Done when nothing architectural is left to decide.
 
+**The spec now exists: [`docs/spec/`](../spec/README.md).** All eleven charted tickets are
+closed and assembled into it. What remains is in
+[section 09](../spec/09-open-questions.md), triaged into what blocks the build (5 items),
+what needs a prototype (1), and what the build decides for itself (5).
+
 ## Notes
 
 - Domain: Shopify storefront development, RetellAI voice agents, monorepo architecture.
@@ -47,6 +52,9 @@ existing cart. Done when nothing architectural is left to decide.
   theme-as-repo-package would overwrite the theme carrying the frozen fallback widget, so the
   two cannot share a store. Catalogue hand-built from real client product lists rather than
   Shopify's generated filler. Supersedes ticket 003's store facts.
+  _**Now created:** `wayfinder-voice-bot-store.myshopify.com`, Jo Malone Candle Theme 1.0.0,
+  verified Dawn-structured — so tickets 005 and 007 transfer without revision. Theme lives in
+  `packages/theme`._
 - Call does **not** survive navigation: the widget reconnects per page and resumes from
   the RetellAI transcript. Prototyped by the operator and confirmed working.
 - One cart only — Shopify's, keyed by the browser cart token. The agent read-throughs it
@@ -92,6 +100,11 @@ existing cart. Done when nothing architectural is left to decide.
   returning 3–5 identities, and live price/stock fetched only for a product the shopper
   already pointed at. Deletes `get_collection_products` and the prompt-routing failure that
   came with it. Assumes ~100 products; reopen if the catalogue reaches thousands.
+  _**Confirmed against the real store:** 52 products, 57 variants, £28–£525 — well inside the
+  assumption. The 80 tags turned out to be a **six-facet model** (fragrance, mood, style,
+  scent, maincat, subcat), which improves the design: mood and style are how people shop by
+  voice, and they are explicit facets rather than inferred vibe. See
+  [spec section 05](../spec/05-catalogue.md)._
 - [Storefront action vocabulary and the DOM-driving boundary](./tickets/007-storefront-action-vocabulary-and-dom-boundary.md):
   **the agent never touches the DOM** — a Tool answers, an Action acts, and every Action
   runs in the browser. The theme emits an Action Target registry beside the Page Context, so
@@ -162,10 +175,15 @@ existing cart. Done when nothing architectural is left to decide.
   API swaps change the page without a navigation, so the emitted Page Context goes stale
   with no reconnect to refresh it. Narrowed by ticket 007: filter and sort now return a
   fresh Page Context in their Action Result, leaving only swaps the agent did not cause.
-- **Security of the mutation surface** — ticket 007 moved cart writes into the browser, so
-  the exposed surface is the Action Envelope side channel: an unauthenticated storefront
-  visitor holding a socket that can be told to mutate a cart. Needs a threat model and an
-  abuse/rate-limit story.
+- **Security of the mutation surface** — _closed by
+  [ticket 012](./tickets/012-security-of-the-mutation-surface.md)._ Splits structural from
+  operational: build every mechanism now, set no thresholds. **Session Token** separate from
+  the public Session Id (an identifier that doubles as a credential leaks wherever it is
+  logged); **idempotency key** per Action Envelope (retrying an unacked Action double-adds —
+  a bug that only shows up on flaky connections, i.e. in demos); chokepoint at **Call Leg
+  creation**, not the socket, which co-locates abuse guards with ticket 009's cost guards.
+  Found a hole nobody was looking at: the **Retell tool webhook had no signature
+  verification**. Ceiling values deliberately unset — no traffic to set them against.
 - **Testing strategy** — how a voice agent plus DOM driving gets tested deterministically.
 - **Transcript and analytics retention** — what is stored, where, and for how long. Ticket 011
   adds a residency edge: the demo audience is European, but Retell is US-only AWS and the backend

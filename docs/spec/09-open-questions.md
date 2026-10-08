@@ -16,17 +16,21 @@ they are not the same kind of problem and must not be worked the same way.
 Changing any of these later would change contracts, storage, or the tool vocabulary. They
 are the remaining work on [the map](../wayfinder/map.md).
 
-### A1. Security of the mutation surface — **highest priority**
+### A1. Security of the mutation surface — **closed**
 
-[Ticket 007](../wayfinder/tickets/007-storefront-action-vocabulary-and-dom-boundary.md) moved
-cart writes into the browser, so the exposed surface is the Action Envelope side channel: an
-**unauthenticated storefront visitor holding a WebSocket that can be told to mutate a cart.**
+Closed by [ticket 012](../wayfinder/tickets/012-security-of-the-mutation-surface.md).
+Summarised in [section 06](./06-tools-and-actions.md).
 
-Needs a threat model and an abuse/rate-limit story. Specifically: what authenticates a socket
-to a Session, what stops one shopper's socket from acting on another's Session, and what
-bounds the volume of Actions a single Session can drive.
+The structural parts are decided and belong in `contracts`: a **Session Token** distinct from
+the public Session Id, an **idempotency key** on every Action Envelope, and the **Call Leg
+creation endpoint** as the single chokepoint for metering. **Retell webhook signature
+verification** was found missing in the process — a public unauthenticated endpoint driving
+backend work, previously unmentioned anywhere in this spec.
 
-Nothing downstream is safe to build until this is closed.
+What remains is operational, not architectural: ceiling values and rate-limit thresholds,
+deliberately unset because there is no real traffic to set them against. The mechanisms and
+the enforcement point are built; only the constants wait. The storefront password is the real
+control until then, and ticket 012 lists what must be true before it comes off.
 
 ### A2. In-page mutation and Page Context staleness
 
