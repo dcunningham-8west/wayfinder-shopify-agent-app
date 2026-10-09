@@ -73,7 +73,7 @@ export class SessionClient {
    * A 404 means a deploy wiped the Session. Starting a fresh one silently is the point:
    * the shopper must not have to click to start again.
    */
-  async startCallLeg(pageContext: PageContext): Promise<CallLeg | LegRefusal> {
+  async startCallLeg(pageContext: PageContext, retried = false): Promise<CallLeg | LegRefusal> {
     const handle = await this.ensure(pageContext);
 
     const response = await fetch(`${this.config.backendUrl}/sessions/${handle.id}/call-legs`, {
@@ -87,7 +87,9 @@ export class SessionClient {
 
     if (response.status === 404) {
       this.forget();
-      return 'unknown_session';
+      // Still inside the click, so the retry keeps the gesture the microphone needs.
+      if (retried) return 'unknown_session';
+      return this.startCallLeg(pageContext, true);
     }
     if (response.status === 429) return 'rate_limited';
     if (response.status === 503) return 'voice_not_configured';
