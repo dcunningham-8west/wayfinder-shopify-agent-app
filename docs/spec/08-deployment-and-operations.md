@@ -56,6 +56,13 @@ Tool-only calls are the asymmetric case **and the common one**, since catalogue 
 live facts involve no browser leg. EU-West would make the common path ~4× worse to win ~20 ms
 on the rarer one. Shopify's Admin API being US-hosted pushes the same way.
 
+**Open measurement — East or West.** [Ticket 014](../wayfinder/tickets/014-transcript-retention-and-data-residency.md)
+found Retell's recordings stored in S3 **`us-west-2`**, while this decision assumed US-East on
+the strength of "follow Retell". Retell's *inference* region is undocumented. The decision
+stands — what is optimised here is the tool-webhook round trip to Retell's API edge, and
+recording storage is asynchronous and off the voice path — but the premise is weaker than it
+read. **If measured latency disappoints, test US-West before redesigning anything else.**
+
 ### Latency floor
 
 **~40 ms** backend round trip for a tool-only call; **~220 ms** for an Action. Excludes
@@ -123,7 +130,7 @@ runtime.
 | Secret | Lives in | Why |
 | --- | --- | --- |
 | `SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_STORE_DOMAIN` | **Render env vars** | Needed at runtime |
-| `RETELL_WEBHOOK_SECRET` | **Render env vars** | Verifies the tool webhook ([ticket 012](../wayfinder/tickets/012-security-of-the-mutation-surface.md)) |
+| `RETELL_API_KEY` | **Render env vars** | Verifies the tool webhook ([ticket 012](../wayfinder/tickets/012-security-of-the-mutation-surface.md)). Retell signs with the API key itself — there is no separate webhook secret |
 | `RETELL_API_KEY`, `RETELL_AGENT_ID`, `RETELL_LLM_ID` | **GitHub secrets** | CI pushes prompts via `llm.update` |
 | Shopify CLI theme token | **GitHub secrets** | CI pushes the theme |
 | All of the above | **Local `.env`**, gitignored | Development |
@@ -145,6 +152,94 @@ achieved by Standby plus the 4,000-token Seed budget keeping per-leg cost flat.
 Guards: 2 s settle delay before opening a leg, ~5 s floor between leg creations, 45 s idle
 timeout. These protect the 10 s billing minimum and Retell's undocumented `create-web-call`
 rate limit.
+
+## Data retention and residency
+
+Decided in [ticket 014](../wayfinder/tickets/014-transcript-retention-and-data-residency.md).
+
+### The backend stores nothing at rest
+
+Sessions live **in process memory only** — no database, no Redis, no disk. Ticket 011 already
+committed to one warm process for the Catalogue Index, so the store exists and is already warm.
+
+This is the load-bearing simplification: with nothing persisted, there is **no backend
+retention policy, no backup to leak, and no erasure request to service**. The backend holds
+personal data for minutes, in RAM, and never writes it down.
+
+| Bound | Value | Why |
+| --- | --- | --- |
+| Idle TTL | **30 min** | Stops an abandoned tab holding a transcript all day |
+| Hard cap | **1,000 Sessions**, LRU evict | Memory ceiling |
+| Unknown session id | **Silently start a fresh Session** | A deploy costs history, not the call |
+
+The unknown-id path is a defined state, not an error: the widget clears `sessionStorage` and
+begins again. If memory is the only store, losing it must be designed for.
+
+### Retell stores the conversation, on our terms
+
+`data_storage_setting` and `data_storage_retention_days` are **per-call parameters on
+`create-web-call`**, so retention is set per Call Leg rather than left to a dashboard default.
+
+| Parameter | Value |
+| --- | --- |
+| `data_storage_setting` | `everything_except_pii` |
+| `data_storage_retention_days` | `30` |
+| `pii_config.categories` | **all available categories** |
+
+Set **explicitly on every leg.** The platform default is `everything`, retained **forever** —
+a parameter that silently falls back to "keep indefinitely" is the wrong failure direction.
+
+`basic_attributes_only` was rejected: a voice agent cannot be debugged without transcripts, and
+"why did it say that?" is the most common question this system will face. Redaction is
+**post-call**, so the live agent still hears names normally; only the stored copy is scrubbed.
+
+### Erasure is documented, not automated
+
+`DELETE /v2/delete-call/{call_id}` erases a call and its recording. Deliberately **not** wired
+to session end — that would destroy the debugging value the 30-day window buys. With an invited
+audience and a 30-day ceiling, a manual operator procedure is sufficient.
+
+### Operational logging carries no conversation
+
+Structured JSON lines to **stdout**, retained by Render for 7 days. No new infrastructure.
+
+**Logged:** leg opened/closed, wake trigger, tool name, Action name and result, Seed token
+count, latency.
+**Never logged:** transcript text, or product-level shopper history. The second is the line
+between operations and profiling, and personalization is out of scope.
+
+### The EEA transfer is disclosed, not hidden
+
+Retell states plainly that it does **not operate services within the European Union**;
+recordings land in S3 `us-west-2`. The demo audience is European, so **voice and transcripts
+leave the EEA by design**, through two hops.
+
+- **One line of text beneath the click-to-start CTA**, always visible, linking to a theme
+  privacy page. Not a modal, not a checkbox.
+- **Sign Retell's DPA** (self-serve, with SCCs — the standard transfer mechanism).
+
+The CTA click *is* the consent act: already explicit and unambiguous, which is why
+click-to-start beat always-listening. A dialog in front of it would damage the demo and gain
+nothing legally. The inline line carries the fact; the linked page carries the detail — US
+processing, 30 days, PII redaction, how to request erasure.
+
+## Operator procedures
+
+Two manual procedures, both deliberately unautomated at this scale.
+
+### Post-demo latency check
+
+Per [section 10](./10-latency.md):
+
+1. `GET /v2/get-call/{call_id}` for the session's Call Legs.
+2. Compare `latency.e2e` p50/p90 against the budget.
+3. Compare against the handler duration in our own stdout logs.
+
+Two numbers from two sides of the boundary make a miss attributable.
+
+### Erasure request
+
+`DELETE /v2/delete-call/{call_id}`. See *Erasure is documented, not automated* above.
 
 ## Target environment
 

@@ -35,9 +35,12 @@ rationale for *why* lives in the ticket each section links to.
 | 07 | [Retell agent](./07-retell-agent.md) | Prompt authoring, sync pipeline, timeouts |
 | 08 | [Deployment and operations](./08-deployment-and-operations.md) | Hosting, cost, latency floor |
 | 09 | [Open questions](./09-open-questions.md) | What is still undecided, and who decides it |
+| 10 | [Latency](./10-latency.md) | The budget per turn, and the knobs that hold it |
+| 11 | [Disambiguation](./11-disambiguation.md) | Match quality, the Referent Set, "the second one" |
+| 12 | [Testing](./12-testing.md) | The four seams, and what is deliberately untested |
 
 ## Status
 
-Draft. Written from the eleven closed tickets on
+Draft. Written from the closed tickets on
 [the map](../wayfinder/map.md). Catalogue figures in section 05 are provisional until the
 new dev store is seeded.

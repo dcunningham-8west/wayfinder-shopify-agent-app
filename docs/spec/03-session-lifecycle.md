@@ -57,6 +57,12 @@ CTA, and **audio never leaves the page while in Standby**. This is not always-li
 The browser carries **only a session id**. It never holds the transcript. This is what makes
 Replay Policy changeable without a storefront release.
 
+The backend holds all of it **in process memory only** — no database
+([ticket 014](../wayfinder/tickets/014-transcript-retention-and-data-residency.md)). Sessions
+expire after **30 min idle**, the process caps at **1,000 Sessions**, and a session id the
+backend no longer recognises **silently starts a fresh Session** rather than erroring. A
+deploy therefore costs a shopper their history, not their call.
+
 ## Handoff
 
 On `pagehide`, **and only if a leg was live**, the widget beacons its transcript snapshot to
@@ -73,6 +79,7 @@ Assembled server-side and injected into every new Call Leg. Contents:
 | Component | Purpose | Sheddable |
 | --- | --- | --- |
 | Session State | Derived facts: products discussed, stated preferences, pending action, promises made | Oldest first, 2nd |
+| Referent Set | What "that one" and "the second one" currently mean ([section 11](./11-disambiguation.md)) | **Never** |
 | Last ~4 turns verbatim | Conversational texture so the agent resumes mid-thought | Trim first |
 | Cart Snapshot | Talking about the cart | **Never** |
 | Page Context | What is on screen | **Never** |

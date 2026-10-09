@@ -116,12 +116,28 @@ The facet vocabulary comes from the catalogue's six-facet tag model
 
 ## Action Results
 
+**Timeouts, retries and filler speech** for every tool are specified in
+[section 10](./10-latency.md): `timeout_ms: 8000`, `max_retry: 0`, and
+`speak_during_execution` only where it is earned.
+
 **Typed per action**, plus a **fresh Page Context** for any Action that changes what is on
 screen.
 
 A filter leaving four products is a different conversation than one leaving zero, and the
 agent cannot know which unless told. This also closes part of the staleness gap: the swap
 that invalidates Page Context is the same call that returns the new one.
+
+### Stale targets are attempted, not rejected
+
+An Action naming a target that an in-page swap removed is **still sent to the page**, and
+`target_not_found` fires. The Page Context epoch ([section 04](./04-page-context.md)) does
+**not** gate Actions.
+
+Pre-emptive rejection at the backend was rejected in
+[ticket 013](../wayfinder/tickets/013-page-context-staleness-on-in-page-mutation.md): most of
+a grid survives a filter, so a server-side snapshot would block Actions that are perfectly
+valid. **The page is the authority on its own DOM.** The epoch mismatch rides along on the
+failure, so the agent can say "that one's been filtered out" rather than apologise blindly.
 
 ## The Preview Panel
 
@@ -149,6 +165,9 @@ candles?" is good when the agent thought of it and irritating when the shopper j
 Where the shopper asked but the agent had to *infer* which thing, it confirms by **echoing**
 rather than asking permission — "adding the Lime Basil & Mandarin one". Money changes the
 tone, not the rule.
+
+**Extended by [section 11](./11-disambiguation.md):** confirm when the agent proposed the
+product **or** when the search returned `match_quality: weak`. A `none` match never acts.
 
 **Enforced in the prompt, not mechanically.** A backend gate would mean re-deriving intent
 from a transcript — a second, worse LLM problem — and a `confirmed: true` argument is a box

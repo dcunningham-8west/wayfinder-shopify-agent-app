@@ -32,38 +32,61 @@ deliberately unset because there is no real traffic to set them against. The mec
 the enforcement point are built; only the constants wait. The storefront password is the real
 control until then, and ticket 012 lists what must be true before it comes off.
 
-### A2. In-page mutation and Page Context staleness
+### A2. In-page mutation and Page Context staleness — **closed**
 
-Section Rendering API swaps ("load more") change the page without a navigation, so the
-emitted Page Context goes stale with no reconnect to refresh it.
+Closed by [ticket 013](../wayfinder/tickets/013-page-context-staleness-on-in-page-mutation.md).
+Summarised in [section 04](./04-page-context.md).
 
-Narrowed by ticket 007 — filter and sort now return a fresh Page Context in their Action
-Result — leaving only swaps **the agent did not cause**. The fix likely changes the Page
-Context contract, so it must precede build.
+The premise shrank on contact with the theme: **there is no "load more"** — Dawn paginates
+with real links. Exactly one interaction changes the visible product set without navigating,
+a **shopper-driven facet filter or sort**, and ticket 007 had already closed the agent-caused
+half.
 
-### A3. Transcript and analytics retention, and data residency
+The fix falls out of ticket 005's design: because Page Context is emitted **per section by
+Liquid**, a Section Rendering API swap returns a freshly-emitted Page Context with the new
+markup. The widget notices it with a `MutationObserver` over a `<script type="application/json">`
+block. Delivered over the Action Envelope socket when a leg is live, and free in Standby. A
+facet change does **not** wake a leg.
 
-What is stored, where, and for how long. Determines backend storage, so it is architectural.
+### A3. Transcript and analytics retention, and data residency — **closed**
 
-Carries a live edge from [ticket 011](../wayfinder/tickets/011-backend-hosting-and-cold-start-floor.md):
-the demo audience is European, Retell is **US-only AWS**, and the backend is US-East.
-EU residents' transcripts leave the EEA **by design**, through two hops. This needs a
-deliberate answer, not a discovered one.
+Closed by [ticket 014](../wayfinder/tickets/014-transcript-retention-and-data-residency.md).
+Summarised in [section 08](./08-deployment-and-operations.md).
 
-### A4. Latency budget
+**The backend stores nothing at rest** — Sessions live in process memory, so there is no
+retention policy, no backup, and no erasure request to service. Retell keeps the conversation
+on our terms: `everything_except_pii`, **30 days**, all PII categories redacted, set
+explicitly on every Call Leg because the platform default is keep-forever.
 
-End-to-end target per turn, and which hops get the budget.
+The EEA transfer is real and is **disclosed** — one line beneath the click-to-start CTA, plus
+Retell's self-serve DPA with SCCs. Operational logs carry no conversation content.
 
-Floored by ticket 011 at **~40 ms** (tool-only call) / **~220 ms** (Action) of backend round
-trip, excluding backend work and Shopify API calls. Ticket 011 also hands this a knob:
-per-tool `timeout_ms`, configurable 1–600 s, paired with `speak_during_execution` for
-anything slow. Constrains tool design, so it precedes build.
+### A4. Latency budget — **closed**
 
-### A5. Disambiguation behaviour
+Closed by [ticket 015](../wayfinder/tickets/015-latency-budget-per-turn.md).
+Specified in [section 10](./10-latency.md).
 
-What the agent does when a request matches many products, or none. Interacts directly with
-the Action vocabulary and with the Catalogue Index's 3–5 result shape, so it is contract-level,
-not prompt-level.
+Three budgets by turn type — **1.0 s / 1.5 s / 2.0 s at p50** for conversational, tool and
+Action turns — against Retell's documented ~600 ms floor. Our backend gets **300 ms p90** of
+it; the rest is Retell's, tuned by config rather than code.
+
+The governing rule is not a number: **anything over ~2.5 s must speak while it works.**
+
+`timeout_ms` drops from the 120,000 ms default to **8,000**, `max_retry` stays **0**, and
+`responsiveness: 1` becomes a build-time assertion — `0.8` would silently add 1.5 s to every
+turn. Verified post-demo from `get-call`'s `latency` object, which reports p50/p90 per
+component.
+
+### A5. Disambiguation behaviour — **closed**
+
+Closed by [ticket 016](../wayfinder/tickets/016-disambiguation-behaviour.md).
+Specified in [section 11](./11-disambiguation.md).
+
+The catalogue is a **scent × format grid**, so the dominant ambiguity is format, not identity:
+**same scent → ask one closed question; different scent → show two or three.** The search tool
+returns a coarse `match_quality` (`exact`/`strong`/`weak`/`none`) rather than a raw score,
+which is what makes "no results" mechanically definable. A **Referent Set** in Session State
+resolves "the second one" across Call Leg boundaries; tools accept ids only.
 
 ---
 
@@ -71,14 +94,20 @@ not prompt-level.
 
 Deciding these on paper would be guessing.
 
-### B1. Testing strategy
+### B1. Testing strategy — **closed**
 
-How a voice agent plus DOM driving gets tested deterministically.
+Closed by [ticket 017](../wayfinder/tickets/017-testing-strategy-for-voice-plus-dom.md).
+Specified in [section 12](./12-testing.md).
 
-This cannot be designed in the abstract — it depends on what is actually observable at each
-seam. Chart as a `prototype` ticket, as
-[ticket 005](../wayfinder/tickets/005-page-context-extraction-strategy.md) did for the Liquid
-emitters.
+**Everything below the microphone is ordinary software.** A
+[seam harness](../wayfinder/prototypes/017-testing/seam-harness.html) drove the whole system
+through seven scenarios with no audio, no mic grant and no LLM — which is the answer.
+
+Four seams, the richest of which (the Session state machine) touches no I/O at all. The
+harness **found a real bug on its first run**: the Referent Set's replace rule destroyed the
+shortlist on navigation, so "add the second one" resolved to nothing.
+
+Conversation quality and latency are **explicitly not covered**.
 
 ---
 

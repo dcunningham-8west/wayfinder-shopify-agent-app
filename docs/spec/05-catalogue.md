@@ -45,6 +45,8 @@ Budget: **~300 tokens**. First component shed if the Seed exceeds 4,000
 In-memory, embedding-based, over the full catalogue. Behind **one** semantic search tool.
 
 - Returns **3–5 ranked identities**. Never prices.
+- Carries a coarse **`match_quality`** and, when nothing matches, an `alternatives` array
+  ([section 11](./11-disambiguation.md)).
 - Rebuilt on Shopify product webhooks, with a periodic poll as a safety net.
 - **In-memory is load-bearing**: it is the single constraint that rules out serverless and
   edge hosting ([section 08](./08-deployment-and-operations.md)).
@@ -53,6 +55,16 @@ One tool, not several. The prior system's `get_collection_products` was deleted 
 because having two overlapping catalogue tools created a prompt-routing decision the agent
 got wrong — general category language routed to a slow collection lookup, leaving the voice
 turn silent for ~10 s. One tool cannot be mis-routed.
+
+#### Ranking is lexical until the first voice test
+
+Embeddings are the design, but the build ships a lexical ranker first, behind a `Ranker`
+seam. Facet filtering runs before ranking either way, and mood and style are already explicit
+facets rather than vibe to be inferred — so the gap is narrower than it looks, and only shows
+on phrasings like "something for a modern flat".
+
+Deferred rather than decided: an embeddings provider is a new key, a new cost and a new
+latency hop, and the first voice test will say whether the gap is audible. Revisit then.
 
 ### Tier 3 — Live facts
 
@@ -111,6 +123,14 @@ Two consequences:
 
 ### Data hygiene — outstanding
 
+- **Facet coverage is partial.** Measured against the live store when the Index was built:
+  `subcat` 51/52, `maincat` 51/52, `fragrance` 38, `scent` 27, `mood` 23, `style` 21. Mood and
+  style are the facets that make voice shopping work — "something relaxing" can currently only
+  ever reach 23 of 52 products, and the agent has no way to know it is answering from a
+  fraction of the catalogue. **Tagging mood and style across all 52 is the highest-value
+  catalogue task before the demo.**
+- **One product carries no facet tags at all**: *Golden Barley Scented Candle*. It is invisible
+  to every facet filter.
 - **`Type` is unreliable as a facet.** 40 of 52 products are `Home Collection`; `Candles` has
   exactly one product while dozens of candles sit under `Home Collection`; `townhouse
   collection` is lowercase where everything else is Title Case. **The Digest and Index should

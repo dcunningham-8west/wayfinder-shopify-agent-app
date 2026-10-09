@@ -13,9 +13,10 @@ page (not checkout), voice via RetellAI, able to answer catalogue questions, ans
 questions about what is on screen, drive the storefront UI, and read/write the shopper's
 existing cart. Done when nothing architectural is left to decide.
 
-**The spec now exists: [`docs/spec/`](../spec/README.md).** Tickets 001–012 are closed and
-assembled into it. [Section 09](../spec/09-open-questions.md) triaged what remained; its
-blocking items are now charted as tickets 013–017, which are the rest of the route.
+**The spec now exists: [`docs/spec/`](../spec/README.md).** **All seventeen tickets are closed
+and the frontier is empty** — nothing architectural is left to decide, which is the destination.
+What remains in [section 09](../spec/09-open-questions.md) is category C: questions the build
+decides for itself, constrained but not open. **The map is done; the next move is to build.**
 
 ## Notes
 
@@ -155,6 +156,58 @@ blocking items are now charted as tickets 013–017, which are the rest of the r
   creation**, not the socket, which co-locates abuse guards with ticket 009's cost guards.
   Found a hole nobody was looking at: the **Retell tool webhook had no signature
   verification**. Ceiling values deliberately unset — no traffic to set them against.
+- [Page Context staleness on in-page mutation](./tickets/013-page-context-staleness-on-in-page-mutation.md):
+  **the page re-emits itself; the widget just notices** — surveying the theme shrank the
+  question, since Dawn paginates with real links, so **there is no "load more"** and exactly
+  one interaction changes the visible product set without navigating: a shopper-driven facet
+  filter. Because ticket 005 emits Page Context **per section in Liquid**, the Section
+  Rendering API swap returns a fresh one attached to the new markup; a `MutationObserver` over
+  a `<script type="application/json">` block catches it, coalesced per frame. Pushed over the
+  Action Envelope socket when a leg is live, **free in Standby**, and never a wake trigger.
+  Per-section **epoch** explains failures but does not gate Actions — the page is the authority
+  on its own DOM. Pull-on-demand rejected: it would make freshness a prompt judgement.
+- [Transcript retention and data residency](./tickets/014-transcript-retention-and-data-residency.md):
+  **the backend stores nothing at rest** — Sessions live in the warm process's memory (30 min
+  idle TTL, 1,000 cap, unknown id silently starts fresh), which dissolves the question: no
+  retention policy, no backup, no erasure request to service. Retell holds the conversation on
+  our terms — `everything_except_pii`, **30 days**, all 14 PII categories — set **explicitly per
+  Call Leg**, since the platform default is keep-everything-**forever**. `basic_attributes_only`
+  rejected: a voice agent cannot be debugged without transcripts, and redaction is post-call so
+  the live agent is unaffected. EEA transfer is real and **disclosed in one line beneath the
+  CTA**, plus Retell's DPA; the CTA click is already the consent act. Logs carry no conversation
+  content. Found that recordings sit in **`us-west-2`**, weakening ticket 011's US-East premise
+  — recorded as an open measurement, not reopened.
+- [Latency budget per turn](./tickets/015-latency-budget-per-turn.md): **three budgets by turn
+  type** — 1.0 / 1.5 / 2.0 s at p50 for conversational, tool and Action turns — against Retell's
+  documented ~600 ms floor. Our handler gets **300 ms p90**, which surfaces the uncomfortable
+  truth that **tuning Retell's config matters more than optimising our code**. The governing
+  rule is not a number: **anything over ~2.5 s must speak while it works**. `timeout_ms` drops
+  from the **120,000 ms** default to 8,000 with `max_retry: 0`; `responsiveness: 1` becomes the
+  one build-time assertion, since `0.8` silently adds 1.5 s to *every* turn. Verifiable for
+  free — `get-call` returns per-component p50/p90 — so it is a **diagnostic, not a gate**.
+  Specified in a new [section 10](../spec/10-latency.md).
+- [Disambiguation behaviour](./tickets/016-disambiguation-behaviour.md): **same scent, different
+  format → ask; different scent → show.** The catalogue is a **scent × format grid**, so the
+  dominant ambiguity is format, not identity — which inverts the expected design: the common
+  case needs a *closed question*, not a list. Because the facets are explicit the test is
+  mechanical, not a prompt judgement. Search returns a coarse **`match_quality`**
+  (`exact`/`strong`/`weak`/`none`) rather than a score, which is what makes "no results"
+  definable at all; `none` carries a tool-computed `alternatives` array. A **Referent Set** in
+  Session State (capacity ~8, replaced wholesale, fed by Page Context too) resolves "the second
+  one" **across Call Leg boundaries** — the most likely sentence in the demo. Tools take **ids
+  only**. Confirmation gains a second trigger: agent-proposed **or** `weak`. Specified in a new
+  [section 11](../spec/11-disambiguation.md).
+- [Testing strategy for voice plus DOM driving](./tickets/017-testing-strategy-for-voice-plus-dom.md):
+  **everything below the microphone is ordinary software.** A
+  [seam harness](./prototypes/017-testing/seam-harness.html) — the whole system with the voice
+  removed, in one HTML file — answered the question by existing. Four seams: tool webhook,
+  Action Envelope, Liquid emission, and the **Session state machine, which touches no I/O at
+  all** — the most behaviour-rich part of the design is the cheapest to test. Its seven
+  walkthroughs are the integration suite. **It found a real bug on its first run:** the Referent
+  Set's wholesale-replace rule meant navigating to a shown product destroyed the shortlist, so
+  "add the second one" resolved to nothing — three sessions of reasoning produced the rule, ten
+  seconds of running it broke the rule. Conversation quality and latency are **explicitly not
+  tested**. Specified in a new [section 12](../spec/12-testing.md).
 
 ## Not yet specified
 

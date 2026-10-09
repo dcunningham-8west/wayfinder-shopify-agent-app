@@ -1,0 +1,254 @@
+<!doctype html>
+<!-- PROTOTYPE — throwaway. Not imported by packages/. Verifies widget states against the ported CSS. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Wayfinder — widget shell (PROTOTYPE)</title>
+    <link rel="stylesheet" href="../010-widget-css/agent-app.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #f6f4f1;
+        color: #1c1b19;
+      }
+      .page {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 24px 60vh;
+      }
+      .fake-product {
+        background: #fff;
+        border: 1px solid #e4e0da;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      .controls {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 13px;
+        z-index: 10000;
+        width: 230px;
+      }
+      .controls button {
+        display: block;
+        width: 100%;
+        margin-bottom: 6px;
+        padding: 6px;
+        cursor: pointer;
+      }
+      .controls code {
+        font-size: 11px;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <strong>Prototype drivers</strong>
+      <button data-drive="speak">agent speaks</button>
+      <button data-drive="listen">shopper speaks</button>
+      <button data-drive="preview">show_in_widget</button>
+      <button data-drive="end">end call</button>
+      <p>container: <code id="classes"></code></p>
+    </div>
+
+    <div class="page">
+      <h1>Candles</h1>
+      <p>Scroll this page while the panel is open — it should minify.</p>
+      <div class="fake-product"><h2>Lime, Basil & Mandarin</h2><p>£28</p></div>
+      <div class="fake-product"><h2>Golden Barley</h2><p>£24</p></div>
+      <div class="fake-product"><h2>Smoked Oud</h2><p>£34</p></div>
+    </div>
+
+    <div class="nav-voice-container" id="voiceContainer">
+      <div class="pill-carousel-viewport">
+        <div class="carousel-track">
+          <button class="voice-pill-trigger" id="voicePillTrigger" aria-label="Start voice conversation">
+            <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4" />
+            </svg>
+            <span class="pill-text">START CONVERSATION</span>
+          </button>
+
+          <div class="minified-preview" id="minifiedPreview">
+            <div class="mini-content-default" id="miniDefaultContent">
+              <div class="mini-status">
+                <span class="status-indicator"></span>
+                <span class="mini-text">SHOPPING ASSISTANT</span>
+              </div>
+            </div>
+            <div class="mini-content-connected" id="miniConnectedContent">
+              <div class="mini-waveform" id="miniWaveform">
+                <span class="mini-wave-bar"></span>
+                <span class="mini-wave-bar"></span>
+                <span class="mini-wave-bar"></span>
+                <span class="mini-wave-bar"></span>
+              </div>
+              <button class="mini-call-btn is-active" id="miniCallBtn">END</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="voice-dropdown-panel" id="voiceDropdown">
+        <div class="panel-header">
+          <div class="header-status">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span class="status-text" id="statusText">LISTENING</span>
+          </div>
+          <div class="header-actions">
+            <button class="close-panel-btn" id="closePanelBtn" aria-label="Minimise"></button>
+          </div>
+        </div>
+
+        <div class="waveform-container" id="waveformContainer">
+          <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+          <span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span>
+          <span class="wave-bar"></span><span class="wave-bar"></span>
+        </div>
+
+        <div class="transcript-preview is-subtitles-enabled" id="transcriptPreview">
+          <p class="speaker-label">Assistant</p>
+          <p class="transcript-text" id="transcriptText">How can I help you today?</p>
+        </div>
+
+        <div class="panel-controls" id="voiceControls">
+          <button class="control-btn mute-btn" id="muteBtn" aria-pressed="false" aria-label="Mute">MUTE</button>
+          <div class="action-buttons-group">
+            <button class="toggle-call-btn is-active" id="toggleCallBtn">END CALL</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-panel js-preview-panel" id="previewPanel">
+        <button class="close-icon js-close-icon" id="previewClose" aria-label="Close">×</button>
+        <div class="preview-panel__inner js-preview-panel-inner" id="previewInner"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      const container = document.getElementById('voiceContainer');
+      const transcript = document.getElementById('transcriptText');
+      const statusText = document.getElementById('statusText');
+      const waveforms = [document.getElementById('waveformContainer'), document.getElementById('miniWaveform')];
+
+      let live = false;
+
+      function show() {
+        document.getElementById('classes').textContent = container.className || '(none)';
+      }
+
+      function start() {
+        live = true;
+        container.classList.add('is-connected', 'is-active');
+        show();
+      }
+
+      function end() {
+        live = false;
+        container.classList.remove('is-connected', 'is-active', 'is-preview-open');
+        document.getElementById('previewPanel').classList.remove('is-open');
+        show();
+      }
+
+      function expand() {
+        if (!live) return;
+        container.classList.add('is-active');
+        show();
+      }
+
+      function minimise() {
+        container.classList.remove('is-active');
+        show();
+      }
+
+      document.getElementById('voicePillTrigger').addEventListener('click', start);
+      document.getElementById('miniCallBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        end();
+      });
+      document.getElementById('toggleCallBtn').addEventListener('click', end);
+      document.getElementById('closePanelBtn').addEventListener('click', minimise);
+      document.getElementById('minifiedPreview').addEventListener('click', (e) => {
+        if (e.target.closest('#miniCallBtn')) return;
+        expand();
+      });
+
+      // Any scroll minifies: the shopper is looking at the page, not at us.
+      window.addEventListener('scroll', () => container.classList.contains('is-active') && minimise(), {
+        passive: true,
+      });
+
+      document.addEventListener(
+        'pointerdown',
+        (e) => {
+          if (!container.classList.contains('is-active')) return;
+          if (container.contains(e.target)) return;
+          minimise();
+        },
+        true,
+      );
+
+      const PRODUCTS = [
+        { title: 'Lime, Basil & Mandarin', price: '£28', url: '#' },
+        { title: 'Smoked Oud', price: '£34', url: '#' },
+        { title: 'Golden Barley', price: '£24', url: '#' },
+      ];
+
+      function showPreview() {
+        const inner = document.getElementById('previewInner');
+        inner.replaceChildren();
+        const grid = document.createElement('div');
+        grid.className = 'product-preview-grid';
+        for (const [i, p] of PRODUCTS.entries()) {
+          const card = document.createElement('article');
+          card.className = 'product-preview-card' + (i === 0 ? ' is-active' : '');
+          card.dataset.previewIndex = String(i);
+          card.innerHTML = `<div class="product-preview-card__body">
+            <h3 class="product-preview-card__title">${p.title}</h3>
+            <p class="product-preview-card__price">${p.price}</p>
+            <a class="product-preview-card__link" href="${p.url}">Open</a>
+          </div>`;
+          grid.appendChild(card);
+        }
+        inner.appendChild(grid);
+        container.classList.add('is-preview-open');
+        document.getElementById('previewPanel').classList.add('is-open');
+        show();
+      }
+
+      document.getElementById('previewClose').addEventListener('click', () => {
+        container.classList.remove('is-preview-open');
+        document.getElementById('previewPanel').classList.remove('is-open');
+        show();
+      });
+
+      document.querySelector('.controls').addEventListener('click', (e) => {
+        const drive = e.target.dataset?.drive;
+        if (!drive) return;
+        if (drive === 'end') return end();
+        if (!live) start();
+        if (drive === 'speak') {
+          statusText.textContent = 'SPEAKING';
+          transcript.textContent = 'The Lime and Basil one is the sharper, greener candle.';
+          waveforms.forEach((w) => w.classList.remove('is-listening'));
+        }
+        if (drive === 'listen') {
+          statusText.textContent = 'LISTENING';
+          waveforms.forEach((w) => w.classList.add('is-listening'));
+        }
+        if (drive === 'preview') showPreview();
+      });
+
+      show();
+    </script>
+  </body>
+</html>
