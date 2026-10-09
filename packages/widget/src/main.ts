@@ -63,7 +63,7 @@ function boot(): void {
     const handle = sessions.handle;
     if (handle) socket.open(handle);
     // Inside the click: the SDK asks for the microphone, and only a gesture may.
-    await client.start(leg.accessToken);
+    await client.start(leg);
   }
 
   ui.onStart(() => void start());

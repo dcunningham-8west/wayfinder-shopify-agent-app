@@ -59,7 +59,13 @@ export function registerSessionRoutes(
       'call leg created',
     );
 
-    return reply.code(201).send({ call_leg_id: callLegId, access_token: call.accessToken });
+    return reply.code(201).send({
+      call_leg_id: callLegId,
+      access_token: call.accessToken,
+      call_id: call.callId,
+      transport: call.transport,
+      ice_servers: call.iceServers,
+    });
   });
 }
 

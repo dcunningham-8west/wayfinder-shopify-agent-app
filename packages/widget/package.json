@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@wayfinder/contracts": "*",
-    "retell-client-js-sdk": "^2.0.8"
+    "retell-client-js-sdk": "^3.0.2"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",

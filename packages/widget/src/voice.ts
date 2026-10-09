@@ -51,8 +51,18 @@ export class VoiceClient {
     return this.#live;
   }
 
-  async start(accessToken: string): Promise<void> {
-    await this.#client.startCall({ accessToken });
+  async start(leg: {
+    accessToken: string;
+    callId: string;
+    transport: string;
+    iceServers: RTCIceServer[];
+  }): Promise<void> {
+    await this.#client.startCall({
+      accessToken: leg.accessToken,
+      callId: leg.callId,
+      transport: leg.transport as 'gateway',
+      iceServers: leg.iceServers,
+    });
   }
 
   stop(): void {

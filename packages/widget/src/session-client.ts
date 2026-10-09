@@ -16,6 +16,9 @@ export interface SessionHandle {
 export interface CallLeg {
   callLegId: string;
   accessToken: string;
+  callId: string;
+  transport: string;
+  iceServers: RTCIceServer[];
 }
 
 export type LegRefusal = 'rate_limited' | 'voice_not_configured' | 'unknown_session' | 'failed';
@@ -90,8 +93,20 @@ export class SessionClient {
     if (response.status === 503) return 'voice_not_configured';
     if (!response.ok) return 'failed';
 
-    const body = (await response.json()) as { call_leg_id: string; access_token: string };
-    return { callLegId: body.call_leg_id, accessToken: body.access_token };
+    const body = (await response.json()) as {
+      call_leg_id: string;
+      access_token: string;
+      call_id: string;
+      transport: string;
+      ice_servers: RTCIceServer[];
+    };
+    return {
+      callLegId: body.call_leg_id,
+      accessToken: body.access_token,
+      callId: body.call_id,
+      transport: body.transport,
+      iceServers: body.ice_servers,
+    };
   }
 
   forget(): void {
