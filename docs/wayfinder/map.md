@@ -13,10 +13,9 @@ page (not checkout), voice via RetellAI, able to answer catalogue questions, ans
 questions about what is on screen, drive the storefront UI, and read/write the shopper's
 existing cart. Done when nothing architectural is left to decide.
 
-**The spec now exists: [`docs/spec/`](../spec/README.md).** All eleven charted tickets are
-closed and assembled into it. What remains is in
-[section 09](../spec/09-open-questions.md), triaged into what blocks the build (5 items),
-what needs a prototype (1), and what the build decides for itself (5).
+**The spec now exists: [`docs/spec/`](../spec/README.md).** Tickets 001–012 are closed and
+assembled into it. [Section 09](../spec/09-open-questions.md) triaged what remained; its
+blocking items are now charted as tickets 013–017, which are the rest of the route.
 
 ## Notes
 
@@ -147,17 +146,21 @@ what needs a prototype (1), and what the build decides for itself (5).
   Corrects a standing misconception — `timeout_ms` is configurable 1–600 s (default 120 s), so
   the old 5 s bound was a choice, not a platform limit.
 
+- [Security of the mutation surface](./tickets/012-security-of-the-mutation-surface.md):
+  **build every mechanism now, set no thresholds** — structural split from
+  operational. **Session Token** separate from
+  the public Session Id (an identifier that doubles as a credential leaks wherever it is
+  logged); **idempotency key** per Action Envelope (retrying an unacked Action double-adds —
+  a bug that only shows up on flaky connections, i.e. in demos); chokepoint at **Call Leg
+  creation**, not the socket, which co-locates abuse guards with ticket 009's cost guards.
+  Found a hole nobody was looking at: the **Retell tool webhook had no signature
+  verification**. Ceiling values deliberately unset — no traffic to set them against.
+
 ## Not yet specified
 
 - **Agent persona and prompt design** — tone, proactivity, when it offers vs waits. Ticket 010
   fixed the *authoring model* (four hand-authored files; tool text generated from `contracts`)
   but not the content.
-- **Disambiguation behaviour** — what the agent does when a request matches many products,
-  or none. Likely interacts with the action vocabulary.
-- **Latency budget** — end-to-end target per turn, and which hops get the budget.
-  Floored by ticket 011 at ~40 ms (tool-only) / ~220 ms (Action) of backend round trip.
-  Ticket 011 also hands this a knob: per-tool `timeout_ms`, paired with `speak_during_execution`
-  for anything slow.
 - **Voice UX details** — barge-in, confirmation before cart mutations, error recovery
   when an action fails on the page.
 - **Widget UI and the Preview Panel** — the widget's visual design, and with it the
@@ -171,23 +174,6 @@ what needs a prototype (1), and what the build decides for itself (5).
 - **Reconnect failure UX** — what the shopper sees and hears when a reconnect fails
   outright. Deferred from ticket 004: best answered against a real widget UI, so it
   graduates alongside the widget design above.
-- **In-page mutation and Page Context staleness** — "load more" and other Section Rendering
-  API swaps change the page without a navigation, so the emitted Page Context goes stale
-  with no reconnect to refresh it. Narrowed by ticket 007: filter and sort now return a
-  fresh Page Context in their Action Result, leaving only swaps the agent did not cause.
-- **Security of the mutation surface** — _closed by
-  [ticket 012](./tickets/012-security-of-the-mutation-surface.md)._ Splits structural from
-  operational: build every mechanism now, set no thresholds. **Session Token** separate from
-  the public Session Id (an identifier that doubles as a credential leaks wherever it is
-  logged); **idempotency key** per Action Envelope (retrying an unacked Action double-adds —
-  a bug that only shows up on flaky connections, i.e. in demos); chokepoint at **Call Leg
-  creation**, not the socket, which co-locates abuse guards with ticket 009's cost guards.
-  Found a hole nobody was looking at: the **Retell tool webhook had no signature
-  verification**. Ceiling values deliberately unset — no traffic to set them against.
-- **Testing strategy** — how a voice agent plus DOM driving gets tested deterministically.
-- **Transcript and analytics retention** — what is stored, where, and for how long. Ticket 011
-  adds a residency edge: the demo audience is European, but Retell is US-only AWS and the backend
-  is US-East, so EU residents' transcripts leave the EEA by design.
 - **Accessibility** — the widget's own a11y, and its interaction with screen readers.
 
 ## Out of scope

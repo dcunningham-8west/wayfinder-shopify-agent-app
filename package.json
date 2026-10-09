@@ -1,0 +1,13 @@
+{
+  "name": "wayfinder-shopify-agent-app",
+  "private": true,
+  "workspaces": [
+    "packages/backend"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present"
+  }
+}
