@@ -1,0 +1,31 @@
+{%- comment -%}
+  Page Context, page level. Section 04: the page supplies identity, the catalogue supplies
+  facts. Never emit descriptions or marketing prose — the schema is strict and will reject it.
+
+  `epoch`, `url` and `sections` are added by the widget; everything here comes from Liquid
+  globals, which are authoritative at render time.
+{%- endcomment -%}
+
+<script type='application/json' data-wayfinder-page>
+  {
+    "template": {{ template.name | json }}
+    {%- if template.name == 'product' -%}
+      ,"subject": {
+        "product_id": {{ product.id | json }},
+        "variant_id": {{ product.selected_or_first_available_variant.id | json }},
+        "handle": {{ product.handle | json }},
+        "title": {{ product.title | json }},
+        "url": {{ product.url | json }},
+        "position": 0,
+        "price": {
+          "amount_minor": {{ product.selected_or_first_available_variant.price | json }},
+          "currency": {{ cart.currency.iso_code | json }}
+        },
+        "available": {{ product.selected_or_first_available_variant.available | json }}
+      }
+    {%- endif -%}
+    {%- if template.name == 'collection' and collection.handle != blank -%}
+      ,"collection_handle": {{ collection.handle | json }}
+    {%- endif -%}
+  }
+</script>

@@ -1,0 +1,105 @@
+{%- comment -%}
+  Mounts the voice widget. Rendered from theme.liquid so it survives every navigation.
+  Theme-integrated rather than an app embed: an embed cannot see inside section render scope,
+  which is where Page Context comes from (section 04).
+{%- endcomment -%}
+
+{{ 'wayfinder-widget.css' | asset_url | stylesheet_tag }}
+
+<script>
+  window.__WAYFINDER__ = {
+    backendUrl: {{ section.settings.backend_url | default: 'https://wayfinder-voice-bot-backend.onrender.com' | json }},
+  };
+</script>
+
+{% render 'wayfinder-page-context' %}
+
+<div class='nav-voice-container' id='wayfinderWidget'>
+  <div class='pill-carousel-viewport'>
+    <div class='carousel-track'>
+      <button class='voice-pill-trigger' type='button' aria-label='{{ 'Start a voice conversation' }}'>
+        {%- render 'icon-mic' -%}
+        <span class='pill-text'>{{ section.settings.cta_label | default: 'START CONVERSATION' }}</span>
+      </button>
+
+      <div class='minified-preview'>
+        <div class='mini-content-default'>
+          <div class='mini-status'>
+            <span class='status-indicator'></span>
+            <span class='mini-text'>{{ section.settings.idle_label | default: 'SHOPPING ASSISTANT' }}</span>
+          </div>
+        </div>
+        <div class='mini-content-connected'>
+          <div class='mini-waveform'>
+            <span class='mini-wave-bar'></span>
+            <span class='mini-wave-bar'></span>
+            <span class='mini-wave-bar'></span>
+            <span class='mini-wave-bar'></span>
+          </div>
+          <button class='mini-call-btn is-active' type='button'>END</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class='voice-dropdown-panel'>
+    <div class='panel-header'>
+      <div class='header-status'>
+        <span class='status-indicator'></span>
+        <span class='status-text'>READY</span>
+      </div>
+      <div class='header-actions'>
+        <button class='close-panel-btn' type='button' aria-label='Minimise'></button>
+      </div>
+    </div>
+
+    <div class='waveform-container'>
+      {%- for i in (1..8) -%}
+        <span class='wave-bar'></span>
+      {%- endfor -%}
+    </div>
+
+    <div class='transcript-preview is-subtitles-enabled'>
+      <p class='speaker-label'>Assistant</p>
+      <p class='transcript-text'></p>
+    </div>
+
+    <div class='panel-controls'>
+      <div class='action-buttons-group'>
+        <button class='toggle-call-btn is-active' type='button'>END CALL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class='preview-panel js-preview-panel'>
+    <button class='close-icon js-close-icon' type='button' aria-label='Close'>&times;</button>
+    <div class='preview-panel__inner js-preview-panel-inner'></div>
+  </div>
+</div>
+
+<script type='module' src='{{ 'wayfinder-widget.js' | asset_url }}' defer='defer'></script>
+
+{% schema %}
+{
+  "name": "Wayfinder voice",
+  "settings": [
+    {
+      "type": "url",
+      "id": "backend_url",
+      "label": "Backend URL"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "Start button label",
+      "default": "START CONVERSATION"
+    },
+    {
+      "type": "text",
+      "id": "idle_label",
+      "label": "Idle label",
+      "default": "SHOPPING ASSISTANT"
+    }
+  ]
+}
+{% endschema %}

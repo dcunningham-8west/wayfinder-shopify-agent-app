@@ -1,0 +1,48 @@
+{%- comment -%}
+  Page Context, per section. This is the layer an app embed structurally cannot replicate:
+  an embed cannot see inside a section's render scope.
+
+  Emitted inside the section's own markup so a Section Rendering API swap carries a freshly
+  emitted context with it — nothing is diffed or scraped.
+
+  Params:
+    wayfinder_section_id  required
+    wayfinder_kind        required, e.g. 'product_grid', 'recommendations', 'main_product'
+    wayfinder_products    optional product list
+    wayfinder_furniture   optional comma-joined "kind:label" pairs
+{%- endcomment -%}
+
+<script type='application/json' data-wayfinder-section>
+  {
+    "section_id": {{ wayfinder_section_id | json }},
+    "kind": {{ wayfinder_kind | json }},
+    "products": [
+      {%- for wayfinder_product in wayfinder_products -%}
+        {
+          "product_id": {{ wayfinder_product.id | json }},
+          "handle": {{ wayfinder_product.handle | json }},
+          "title": {{ wayfinder_product.title | json }},
+          "url": {{ wayfinder_product.url | json }},
+          "position": {{ forloop.index0 }},
+          "price": {
+            "amount_minor": {{ wayfinder_product.price | json }},
+            "currency": {{ cart.currency.iso_code | json }}
+          },
+          "available": {{ wayfinder_product.available | json }}
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ],
+    "furniture": [
+      {%- assign wayfinder_items = wayfinder_furniture | split: ',' -%}
+      {%- for wayfinder_item in wayfinder_items -%}
+        {%- assign wayfinder_parts = wayfinder_item | split: ':' -%}
+        {
+          "kind": {{ wayfinder_parts[0] | strip | json }}
+          {%- if wayfinder_parts[1] -%}
+            ,"label": {{ wayfinder_parts[1] | strip | json }}
+          {%- endif -%}
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]
+  }
+</script>

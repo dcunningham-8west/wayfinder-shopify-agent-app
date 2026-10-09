@@ -1,0 +1,16 @@
+{%- comment -%}
+  Action Target registry for variants. Dawn's pickers are keyed by option value, not by
+  variant id, so the agent's `variant_id` needs somewhere to land. Each entry carries the
+  option values the picker actually understands; the widget sets them and lets Dawn re-render.
+
+  Hidden, not interactive: this is a lookup table the agent addresses by id.
+{%- endcomment -%}
+
+<div hidden data-wayfinder-variant-targets>
+  {%- for variant in product.variants -%}
+    <span
+      data-agent-action='{{ variant.id }}'
+      data-wayfinder-options='{{ variant.options | join: '~~' | escape }}'
+    ></span>
+  {%- endfor -%}
+</div>
