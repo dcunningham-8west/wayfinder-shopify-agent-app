@@ -1,0 +1,18 @@
+{
+  "name": "@wayfinder/retell",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "sync": "node --env-file=../../.env dist/sync.js",
+    "print": "node dist/print.js"
+  },
+  "dependencies": {
+    "@wayfinder/contracts": "*",
+    "retell-sdk": "^6.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
