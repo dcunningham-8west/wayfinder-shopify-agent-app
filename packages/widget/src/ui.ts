@@ -27,9 +27,13 @@ export function mountUi(root: HTMLElement): WidgetUi {
     if (root.classList.contains('is-connected')) root.classList.add('is-active');
   };
 
+  let startHandler: (() => void) | undefined;
+
+  // Hover slides the island over the pill, so idle clicks land here, not on the trigger.
   query('.minified-preview')?.addEventListener('click', (event) => {
     if ((event.target as Element).closest('.mini-call-btn')) return;
-    expand();
+    if (root.classList.contains('is-connected')) expand();
+    else startHandler?.();
   });
   query('.close-panel-btn')?.addEventListener('click', minimise);
 
@@ -65,6 +69,7 @@ export function mountUi(root: HTMLElement): WidgetUi {
     },
     minimise,
     onStart(handler) {
+      startHandler = handler;
       query('.voice-pill-trigger')?.addEventListener('click', handler);
     },
     onEnd(handler) {
