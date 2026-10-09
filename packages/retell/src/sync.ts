@@ -46,6 +46,9 @@ async function main(): Promise<void> {
   await client.llm.update(llmId, {
     general_prompt: prompt,
     general_tools: customFunctions(webhookUrl),
+    // The agent opens; the continuity prompt decides whether that is a greeting or a resumption.
+    start_speaker: 'agent',
+    begin_message: null,
   });
 
   await client.agent.update(agentId, {
