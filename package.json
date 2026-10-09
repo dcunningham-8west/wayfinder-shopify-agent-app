@@ -2,7 +2,10 @@
   "name": "wayfinder-shopify-agent-app",
   "private": true,
   "workspaces": [
-    "packages/backend"
+    "packages/contracts",
+    "packages/backend",
+    "packages/retell",
+    "packages/widget"
   ],
   "engines": {
     "node": ">=22"
