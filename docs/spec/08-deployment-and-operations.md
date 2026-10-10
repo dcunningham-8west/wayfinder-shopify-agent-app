@@ -246,7 +246,22 @@ processing, 30 days, PII redaction, how to request erasure.
 
 ## Operator procedures
 
-Two manual procedures, both deliberately unautomated at this scale.
+Three manual procedures, the latter two deliberately unautomated at this scale.
+
+### Testing after a theme deploy
+
+**Test in a private window, or hard-reload first.** The browser caches the storefront HTML,
+and the versioned `asset_url` for the widget bundle lives *in* that HTML — so a cached page
+keeps requesting the previous bundle however many times CI deploys a new one. This reads
+exactly like a failed deploy and is not one.
+
+To tell them apart, from the console on the storefront:
+
+```js
+fetch(document.querySelector('script[src*="wayfinder-widget"]').src)
+  .then((r) => r.text())
+  .then((t) => console.log(t.includes('<a string only the new build has>')));
+```
 
 ### Post-demo latency check
 
