@@ -65,12 +65,18 @@ async function dispatchTool(
 async function dispatchAction(
   name: ActionName,
   call: ToolCall,
-  { actions, sessions }: ToolDeps,
+  { actions, sessions, catalogue }: ToolDeps,
 ): Promise<ToolOutcome> {
   if (!call.sessionId) return { ok: false, error: 'no_session', detail: 'call has no session' };
 
   const action = Action.safeParse({ ...(call.args as object), action: name });
   if (!action.success) return invalidArguments(action);
+
+  if (action.data.action === 'open_product') {
+    const url = catalogue.urlFor(action.data.product_id);
+    if (!url) return { ok: false, error: 'unknown_product', detail: action.data.product_id };
+    action.data.url = url;
+  }
 
   const outcome = await actions.perform(call.sessionId, action.data);
 

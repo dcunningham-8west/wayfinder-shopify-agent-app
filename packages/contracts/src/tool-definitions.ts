@@ -1,6 +1,6 @@
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ZodTypeAny } from 'zod';
-import { ACTION_DESCRIPTIONS, UNOFFERED_ACTIONS, actionSchema } from './action-definitions.js';
+import { ACTION_DESCRIPTIONS, SERVER_FILLED, UNOFFERED_ACTIONS, actionSchema } from './action-definitions.js';
 import { ActionName } from './actions.js';
 import { TOOL_SCHEMAS, ToolName } from './tools.js';
 
@@ -33,18 +33,18 @@ export interface ToolDefinition {
   };
 }
 
-function parametersOf(schema: ZodTypeAny, drop?: string): ToolDefinition['parameters'] {
+function parametersOf(schema: ZodTypeAny, drop: readonly string[] = []): ToolDefinition['parameters'] {
   const json = zodToJsonSchema(schema, {
     $refStrategy: 'none',
     // Retell validates against draft-07, where `exclusiveMinimum` is a number, not a flag.
     target: 'jsonSchema7',
   }) as { properties?: Record<string, unknown>; required?: string[] };
   const properties = { ...(json.properties ?? {}) };
-  if (drop) delete properties[drop];
+  for (const key of drop) delete properties[key];
   return {
     type: 'object',
     properties,
-    required: (json.required ?? []).filter((key) => key !== drop),
+    required: (json.required ?? []).filter((key) => !drop.includes(key)),
   };
 }
 
@@ -63,7 +63,7 @@ export function toolDefinitions(): ToolDefinition[] {
       description: ACTION_DESCRIPTIONS[name],
       kind: 'action',
       // The agent names the action by calling it; the discriminant is not an argument.
-      parameters: parametersOf(actionSchema(name), 'action'),
+      parameters: parametersOf(actionSchema(name), ['action', ...(SERVER_FILLED[name] ?? [])]),
     }));
 
   return [...tools, ...actions];

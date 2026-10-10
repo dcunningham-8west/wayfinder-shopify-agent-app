@@ -13,4 +13,6 @@ import type {
 export interface Catalogue {
   search(args: SearchCatalogueArgs): Promise<SearchCatalogueResult>;
   liveFacts(args: GetLiveFactsArgs): Promise<GetLiveFactsResult>;
+  /** Where a product lives on the storefront, so opening one does not depend on the page. */
+  urlFor(productId: string): string | undefined;
 }

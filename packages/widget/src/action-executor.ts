@@ -60,10 +60,13 @@ export async function executeAction(action: Action): Promise<Outcome> {
       return { status: 'ok', acked: true };
 
     case 'open_product': {
-      const target = findTarget(action.product_id);
-      const href = target?.getAttribute('href');
+      // The catalogue URL is authoritative; the on-page link is only a fallback for a
+      // product the shopper is already looking at.
+      const href = action.url ?? findTarget(action.product_id)?.getAttribute('href');
       if (!href) return notFound();
-      queueMicrotask(() => location.assign(href));
+      const target = new URL(href, location.origin);
+      if (action.variant_id) target.searchParams.set('variant', action.variant_id);
+      queueMicrotask(() => location.assign(target.toString()));
       return { status: 'ok', acked: true };
     }
 

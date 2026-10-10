@@ -31,8 +31,9 @@ function customFunctions(webhookUrl: string) {
     timeout_ms: TOOL_TIMEOUT_MS,
     speak_during_execution: EXECUTION_MESSAGE[tool.name] !== undefined,
     execution_message_description: EXECUTION_MESSAGE[tool.name],
-    // An Action's outcome is the thing to speak; a navigate ack is not worth narrating.
-    speak_after_execution: tool.name !== 'navigate' && tool.name !== 'open_product',
+    // A navigate's outcome arrives in the next leg's Seed, so there is nothing to say yet.
+    // Everything else must be spoken, or a failure reaches the shopper as silence.
+    speak_after_execution: tool.name !== 'navigate',
   }));
 }
 

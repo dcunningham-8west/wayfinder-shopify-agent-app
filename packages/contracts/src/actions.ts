@@ -15,6 +15,11 @@ export const Action = z.discriminatedUnion('action', [
     action: z.literal('open_product'),
     product_id: ProductId,
     variant_id: VariantId.optional(),
+    /**
+     * Filled by the backend from the Catalogue, never sent by the agent: a searched product
+     * is usually not on the page, so a DOM target cannot be the only way to reach it.
+     */
+    url: z.string().optional(),
   }),
   z.object({ action: z.literal('select_variant'), variant_id: VariantId }),
   z.object({

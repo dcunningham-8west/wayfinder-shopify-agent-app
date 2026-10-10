@@ -33,6 +33,10 @@ export class CatalogueIndex implements Catalogue {
     return this.#products.length;
   }
 
+  urlFor(productId: string): string | undefined {
+    return this.#products.find((p) => p.product_id === productId)?.url;
+  }
+
   async search(args: SearchCatalogueArgs): Promise<SearchCatalogueResult> {
     // Filter before ranking: facets are exact truth, the ranker is a guess.
     const candidates = this.#products.filter((p) => matchesFilters(p, args));

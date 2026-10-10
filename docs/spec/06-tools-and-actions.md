@@ -111,6 +111,12 @@ The Cart Snapshot remains **never valid for computing a mutation**
 controls — Dawn drives both through query parameters and the Section Rendering API. The agent
 speaks in facets; the widget builds URLs.
 
+**`open_product` does not go through the Action Target registry.** The agent names a
+`product_id`; the backend resolves it to the canonical storefront URL from the Catalogue and
+fills it into the Envelope. The registry only covers what is **on the current page**, and a
+searched product usually is not — the product page is the one destination the DOM cannot reach,
+because arriving there is the point ([KF-002](../known-failures.md)).
+
 The facet vocabulary comes from the catalogue's six-facet tag model
 ([section 05](./05-catalogue.md)), so "show me the woody ones" is a filter, not a search.
 

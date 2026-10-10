@@ -39,6 +39,14 @@ export function actionSchema(name: ActionName) {
 }
 
 /**
+ * Fields the backend fills in on the way to the browser. They are part of the Action but not
+ * part of the agent's vocabulary, so the generated tool definition drops them.
+ */
+export const SERVER_FILLED: Partial<Record<ActionName, readonly string[]>> = {
+  open_product: ['url'],
+};
+
+/**
  * In the vocabulary but not yet offered to the agent: the Preview Panel does not exist, so
  * `show_in_widget` succeeds silently and the agent narrates a panel the shopper cannot see.
  * Delete the entry when the panel ships.
