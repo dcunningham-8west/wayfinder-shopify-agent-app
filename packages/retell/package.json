@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "sync": "node --env-file=../../.env dist/sync.js",
+    "sync:ci": "node dist/sync.js",
     "print": "node dist/print.js"
   },
   "dependencies": {

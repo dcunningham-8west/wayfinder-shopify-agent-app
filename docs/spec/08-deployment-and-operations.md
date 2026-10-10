@@ -132,12 +132,29 @@ runtime.
 | `SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_STORE_DOMAIN` | **Render env vars** | Needed at runtime |
 | `RETELL_API_KEY` | **Render env vars** | Verifies the tool webhook ([ticket 012](../wayfinder/tickets/012-security-of-the-mutation-surface.md)). Retell signs with the API key itself — there is no separate webhook secret |
 | `RETELL_API_KEY`, `RETELL_AGENT_ID`, `RETELL_LLM_ID` | **GitHub secrets** | CI pushes prompts via `llm.update` |
-| Shopify CLI theme token | **GitHub secrets** | CI pushes the theme |
+| Shopify CLI theme token (`shptka_`) | **GitHub secrets** | CI pushes the theme. A **separate credential** from the Admin token: issued by the Theme Access app, scoped to theme files only |
 | All of the above | **Local `.env`**, gitignored | Development |
 | Storefront password | **Operator only** | Never needed by code |
 
 `.gitignore` must cover `.env` and `.shopify/` **before** the theme is first pulled. A leaked
 token is only truly fixed by rotation.
+
+### Workflows
+
+Three, all path-filtered on `main`, each also runnable by hand (`workflow_dispatch`):
+
+| Workflow | Fires on | Does |
+| --- | --- | --- |
+| `ci.yml` | every PR and push | build + typecheck |
+| `deploy-theme.yml` | `theme`, `widget` or `contracts` changes | builds the widget bundle, then `shopify theme push` |
+| `sync-retell.yml` | `retell` or `contracts` changes | builds, then `llm.update` + `agent.update` |
+
+Both deploys build first and from the same commit, so the artifact can never lag its source.
+Non-secret configuration — store domain and backend URL — rides as repository **variables**
+(`vars.*`) rather than secrets, so it is readable in a failed run's logs.
+
+`deploy-theme.yml` pushes to the **published** theme (`--live`) rather than naming a theme id,
+because the dev store has one. Pin `--theme <id>` if that stops being true.
 
 ## Webhooks
 
@@ -177,17 +194,21 @@ begins again. If memory is the only store, losing it must be designed for.
 
 ### Retell stores the conversation, on our terms
 
-`data_storage_setting` and `data_storage_retention_days` are **per-call parameters on
-`create-web-call`**, so retention is set per Call Leg rather than left to a dashboard default.
+`data_storage_setting`, `data_storage_retention_days` and `pii_config` are set **per Call Leg**,
+inside `agent_override.agent` on `create-web-call`, rather than left to a dashboard default.
 
 | Parameter | Value |
 | --- | --- |
 | `data_storage_setting` | `everything_except_pii` |
 | `data_storage_retention_days` | `30` |
-| `pii_config.categories` | **all available categories** |
+| `pii_config.categories` | **all 14 categories**, `mode: post_call` |
 
 Set **explicitly on every leg.** The platform default is `everything`, retained **forever** —
 a parameter that silently falls back to "keep indefinitely" is the wrong failure direction.
+
+The same three are also pushed onto the agent by `packages/retell` sync, so the agent default and
+the per-leg override agree. The per-leg copy is the one that is load-bearing: the dashboard is not
+the source of truth, and an operator editing it there will be overwritten on the next sync.
 
 `basic_attributes_only` was rejected: a voice agent cannot be debugged without transcripts, and
 "why did it say that?" is the most common question this system will face. Redaction is

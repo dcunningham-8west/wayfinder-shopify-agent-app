@@ -37,3 +37,10 @@ export function actionSchema(name: ActionName) {
   if (!member) throw new Error(`No schema for action ${name}`);
   return member;
 }
+
+/**
+ * In the vocabulary but not yet offered to the agent: the Preview Panel does not exist, so
+ * `show_in_widget` succeeds silently and the agent narrates a panel the shopper cannot see.
+ * Delete the entry when the panel ships.
+ */
+export const UNOFFERED_ACTIONS: ReadonlySet<ActionName> = new Set(['show_in_widget']);

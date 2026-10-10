@@ -1,6 +1,6 @@
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ZodTypeAny } from 'zod';
-import { ACTION_DESCRIPTIONS, actionSchema } from './action-definitions.js';
+import { ACTION_DESCRIPTIONS, UNOFFERED_ACTIONS, actionSchema } from './action-definitions.js';
 import { ActionName } from './actions.js';
 import { TOOL_SCHEMAS, ToolName } from './tools.js';
 
@@ -56,13 +56,15 @@ export function toolDefinitions(): ToolDefinition[] {
     parameters: parametersOf(TOOL_SCHEMAS[name].args),
   }));
 
-  const actions: ToolDefinition[] = ActionName.options.map((name) => ({
-    name,
-    description: ACTION_DESCRIPTIONS[name],
-    kind: 'action',
-    // The agent names the action by calling it; the discriminant is not an argument.
-    parameters: parametersOf(actionSchema(name), 'action'),
-  }));
+  const actions: ToolDefinition[] = ActionName.options
+    .filter((name) => !UNOFFERED_ACTIONS.has(name))
+    .map((name) => ({
+      name,
+      description: ACTION_DESCRIPTIONS[name],
+      kind: 'action',
+      // The agent names the action by calling it; the discriminant is not an argument.
+      parameters: parametersOf(actionSchema(name), 'action'),
+    }));
 
   return [...tools, ...actions];
 }

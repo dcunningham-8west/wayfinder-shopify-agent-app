@@ -1,0 +1,44 @@
+name: Deploy theme
+
+# ADR-0002: the Shopify GitHub integration is disconnected, so deploys invert — CI pushes to
+# Shopify rather than Shopify pulling from GitHub. The widget bundle is built here, never
+# committed, so the asset Shopify serves always matches the source in this commit.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/theme/**'
+      - 'packages/widget/**'
+      - 'packages/contracts/**'
+      - '.github/workflows/deploy-theme.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-theme
+  cancel-in-progress: true
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build contracts and widget bundle
+        run: |
+          npm run build --workspace packages/contracts
+          npm run build --workspace packages/widget
+      - name: Push theme
+        env:
+          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}
+          SHOPIFY_FLAG_STORE: ${{ vars.SHOPIFY_STORE_DOMAIN }}
+        run: >
+          npx --yes @shopify/cli@3 theme push
+          --path packages/theme
+          --live
+          --json

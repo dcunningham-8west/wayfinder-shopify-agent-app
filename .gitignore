@@ -21,6 +21,10 @@ packages/*/dist/
 # Generated from contracts — regenerate, never edit by hand
 packages/contracts/generated/
 
+# Widget bundle: built into the theme by CI, not committed (ADR-0003)
+packages/theme/assets/wayfinder-*.js
+packages/theme/assets/wayfinder-*.js.map
+
 # Editor / OS
 .DS_Store
 Thumbs.db

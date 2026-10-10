@@ -1,5 +1,5 @@
 import Retell from 'retell-sdk';
-import { toolDefinitions } from '@wayfinder/contracts';
+import { RETELL_DATA_STORAGE, toolDefinitions } from '@wayfinder/contracts';
 import { buildPrompt } from './build-prompt.js';
 
 /**
@@ -56,7 +56,12 @@ async function main(): Promise<void> {
     // 0.8 silently adds ~1.5 s to every turn; this is a latency decision, not a style one.
     responsiveness: 1,
     interruption_sensitivity: 1,
-    data_storage_setting: 'everything_except_pii',
+    data_storage_setting: RETELL_DATA_STORAGE.setting,
+    data_storage_retention_days: RETELL_DATA_STORAGE.retentionDays,
+    pii_config: {
+      mode: RETELL_DATA_STORAGE.piiMode,
+      categories: [...RETELL_DATA_STORAGE.piiCategories],
+    },
   });
 
   console.log(`synced: ${prompt.length} chars, ${toolDefinitions().length} tools -> ${webhookUrl}`);

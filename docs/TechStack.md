@@ -17,6 +17,7 @@ entry without a reason is the first thing to get swapped out by accident.
 | Catalogue | In-memory embedding index | 52 products; rebuilt on Shopify webhooks |
 | Commerce | Shopify Admin API (read-only) + Ajax Cart API (browser) | The backend never writes to Shopify |
 | Storefront | Shopify theme, Dawn-structured | Jo Malone Candle Theme 1.0.0 |
+| Widget bundler | esbuild | Built into `packages/theme/assets` by CI; not committed. See below |
 
 Full deployment and credential detail: [spec section 08](./spec/08-deployment-and-operations.md).
 
@@ -46,13 +47,17 @@ types would let the four drift apart silently.
 **Cart writes in the browser.** The cart cookie and the theme's cart-drawer re-render both live
 in the page; writing server-side via the cart token means reimplementing both.
 
+**esbuild, with code splitting.** The split is the reason, not the speed: the voice SDK is a
+deferred chunk, so a shopper who never clicks never downloads it. The bundle is written into the
+theme so Shopify's own CDN serves it from the storefront origin — which the microphone permission
+model requires anyway ([ADR-0003](./adr/0003-esbuild-for-the-widget-bundle.md)).
+
 ## Deliberately absent
 
 | Not used | Because |
 | --- | --- |
 | A database | Nothing is stored at rest. 30-minute idle TTL on an in-process `Map` |
 | `dotenv` | Node 22 loads `--env-file` natively |
-| A bundler, for now | The widget will need one; nothing else does yet |
 | An ORM, a queue, a cache | No persistence to map, no jobs to queue, nothing slow enough to cache |
 | Shopify app framework / app embed | An embed cannot see inside a section's render scope, which Page Context needs ([spec section 04](./spec/04-page-context.md)) |
 

@@ -90,3 +90,30 @@ export const TIMING = {
 } as const;
 
 export const MAX_SESSIONS_IN_MEMORY = 1000;
+
+/**
+ * Retell's own defaults are keep-everything-forever, so these are set explicitly on the agent
+ * *and* on every Call Leg. Ticket 014.
+ */
+export const RETELL_DATA_STORAGE = {
+  setting: 'everything_except_pii',
+  retentionDays: 30,
+  piiMode: 'post_call',
+  /** All 14 categories: redaction is post-call, so scrubbing everything costs the agent nothing. */
+  piiCategories: [
+    'person_name',
+    'address',
+    'email',
+    'phone_number',
+    'ssn',
+    'passport',
+    'driver_license',
+    'credit_card',
+    'bank_account',
+    'password',
+    'pin',
+    'medical_id',
+    'date_of_birth',
+    'customer_account_number',
+  ],
+} as const;

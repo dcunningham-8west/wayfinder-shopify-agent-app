@@ -1,0 +1,40 @@
+name: Sync Retell agent
+
+# One-way push: nothing is ever read back from the Retell dashboard. A dashboard edit is
+# overwritten by the next run, which is the point — the configuration lives in this repo.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/retell/**'
+      - 'packages/contracts/**'
+      - '.github/workflows/sync-retell.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-retell
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build contracts and retell
+        run: |
+          npm run build --workspace packages/contracts
+          npm run build --workspace packages/retell
+      - name: Push prompt, tools and agent config
+        env:
+          RETELL_API_KEY: ${{ secrets.RETELL_API_KEY }}
+          RETELL_AGENT_ID: ${{ secrets.RETELL_AGENT_ID }}
+          RETELL_LLM_ID: ${{ secrets.RETELL_LLM_ID }}
+          BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+        run: npm run sync:ci --workspace packages/retell
