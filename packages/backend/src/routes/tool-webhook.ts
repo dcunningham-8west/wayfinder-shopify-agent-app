@@ -51,7 +51,18 @@ export async function toolWebhookPlugin(
     const outcome = await dispatchToolCall({ name, args: body.args ?? {}, sessionId }, deps);
 
     // Ids and outcomes only — logs never carry conversation content (ticket 014).
-    request.log.info({ tool: name, call_id: body.call?.call_id, ok: outcome.ok }, 'tool call');
+    // `ok` is the webhook's own success; an Action that failed in the page still arrives here
+    // as ok, so the Action's status and reason have to be logged separately.
+    request.log.info(
+      {
+        tool: name,
+        call_id: body.call?.call_id,
+        ok: outcome.ok,
+        ...actionDetail(outcome),
+        ...(sessionId ? { page_connected: deps.actions.isConnected(sessionId) } : {}),
+      },
+      'tool call',
+    );
 
     // Always 2xx: a non-2xx hands the agent a raw HTTP error to read out. A failure the
     // agent can narrate beats one the shopper hears as silence.
@@ -77,4 +88,12 @@ function truncate(outcome: unknown): unknown {
   const serialised = JSON.stringify(outcome);
   if (serialised.length <= RESULT_CHAR_CAP) return outcome;
   return { ok: false, error: 'result_too_large' };
+}
+
+/** The part of an Action's outcome worth logging: why it failed, never what was said. */
+function actionDetail(outcome: Awaited<ReturnType<typeof dispatchToolCall>>) {
+  if (!outcome.ok) return { error: outcome.error, detail: outcome.detail };
+  const result = outcome.result as { status?: string; reason?: string } | undefined;
+  if (!result?.status) return {};
+  return { status: result.status, ...(result.reason ? { reason: result.reason } : {}) };
 }
