@@ -41,4 +41,5 @@ jobs:
           npx --yes @shopify/cli@3 theme push
           --path packages/theme
           --live
+          --allow-live
           --json
