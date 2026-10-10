@@ -163,3 +163,75 @@ current page, so they are fine, but that is now a claim rather than an oversight
 
 **A silent failure path is a design decision, not an omission.** Every action should be asked:
 if this fails, who tells the shopper?
+
+### Verification
+
+Three retests were wasted on a **stale bundle**: the browser had cached the storefront HTML,
+whose versioned `asset_url` still pointed at the previous widget. Backend logs proved the fix
+was live (the Envelope carried `url`) while the page answered `target_not_found` from the old
+executor. Reads exactly like a failed deploy. Now an operator procedure in
+[spec section 08](./spec/08-deployment-and-operations.md): **test in a private window.**
+
+Confirmed fixed on a clean load. The agent reaches the product page.
+
+---
+
+## KF-003 — The agent navigates unasked, and cuts itself off doing it
+
+- **Found:** 2026-10-10
+- **Class:** prompt, and architecture
+- **Status:** fixed, unverified
+- **Caused by:** the KF-001 guardrail. This is a regression we wrote.
+
+### Observed
+
+```
+Agent: "The Lime Basil & Mandarin Heart Box Gift Set is fresh and citrusy. The
+        Pomegranate Noir Heart Box Gift Set is richer and deeper. Which sounds better?"
+User:  "The second one"
+       → open_product
+Agent: "Open—"                     (cut off mid-word by the page unloading)
+```
+
+The product page loaded correctly. Everything about getting there was wrong.
+
+### Diagnosis
+
+**The unasked navigation is a self-inflicted wound.** KF-001's guardrail ended with "When a
+shopper picks one of the products you just described, open it. Do not announce it instead of
+doing it." That was written to stop the agent narrating without acting. It overshot into acting
+without asking, and the agent obeyed it exactly.
+
+The distinction the rule missed: **a shopper choosing between two things you described is
+answering your question, not asking to go anywhere.** "The second one" is an opinion. The
+existing confirmation rule only covered cart writes, on the reasoning that navigation is free to
+undo — true, but "free to undo" is not the same as "unremarkable", and replacing the page
+mid-conversation is not something to do on an inference.
+
+**The cut-off is a different defect, and KF-002 created it.** Flipping `speak_after_execution` to
+`true` for `open_product` stopped silent failures — and introduced a race, because the widget
+navigated on `queueMicrotask`, which is to say immediately. The agent was told to speak and the
+page was torn out from under it. The two rules were individually right and collided.
+
+Note the shape: this is the **second** time in this file that two locally-correct decisions
+produced a defect in the gap between them.
+
+### Resolution
+
+- [`speech.ts`](../packages/widget/src/speech.ts): a small gate fed by the SDK's
+  `agent_start_talking` / `agent_stop_talking` events. Navigation now waits for the agent to
+  start speaking (1.5 s window) and then finish (6 s cap) before `location.assign`. The Action is
+  still **acked immediately**, so the agent's turn is not held open — only the leaving is
+  deferred. Both `navigate` and `open_product` go through it.
+- Guardrail rewritten as **"Do not move the shopper without being asked"**: answering a question
+  is not a request to navigate, so offer ("Want me to open that one?") and go on yes. An explicit
+  "show me" / "open that" still goes immediately, without a second question.
+
+### Lesson
+
+**A prompt rule written to fix one failure is a change to behaviour everywhere.** KF-001's rule
+was never tested against the case where the shopper was merely expressing a preference. Prompt
+fixes need the same "what else does this touch?" as code.
+
+**Deferring work until speech ends is a widget responsibility, not a prompt one.** No wording
+could have fixed the cut-off.

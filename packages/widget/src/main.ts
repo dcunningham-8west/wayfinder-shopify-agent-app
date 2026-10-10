@@ -2,6 +2,7 @@ import { ActionSocket } from './action-socket.js';
 import { loadConfig } from './config.js';
 import { observePageContext, readPageContext } from './page-context.js';
 import { SessionClient } from './session-client.js';
+import { setAgentTalking } from './speech.js';
 import { mountUi } from './ui.js';
 import type { VoiceClient } from './voice.js';
 
@@ -37,6 +38,7 @@ function boot(): void {
         socket.close();
       },
       onAgentTalking: (talking) => {
+        setAgentTalking(talking);
         ui.setListening(!talking);
         ui.setStatus(talking ? 'SPEAKING' : 'LISTENING');
       },

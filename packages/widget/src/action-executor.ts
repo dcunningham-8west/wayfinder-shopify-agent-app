@@ -1,5 +1,6 @@
 import type { Action, ActionFailure, ActionResult } from '@wayfinder/contracts';
 import { readPageContext } from './page-context.js';
+import { whenAgentFinishesSpeaking } from './speech.js';
 
 /**
  * Section 06. Cart writes run here, through the Ajax Cart API: the cart cookie and the
@@ -52,11 +53,15 @@ function withParams(mutate: (params: URLSearchParams) => void): Outcome {
   return { status: 'ok', acked: true };
 }
 
+/** Ack first, then leave: a request held open across a page unload dies with the page. */
+function leaveFor(href: string): void {
+  void whenAgentFinishesSpeaking().then(() => location.assign(href));
+}
+
 export async function executeAction(action: Action): Promise<Outcome> {
   switch (action.action) {
     case 'navigate':
-      // Ack before unloading: a request held open across a page unload dies with the page.
-      queueMicrotask(() => location.assign(action.url));
+      leaveFor(action.url);
       return { status: 'ok', acked: true };
 
     case 'open_product': {
@@ -66,7 +71,7 @@ export async function executeAction(action: Action): Promise<Outcome> {
       if (!href) return notFound();
       const target = new URL(href, location.origin);
       if (action.variant_id) target.searchParams.set('variant', action.variant_id);
-      queueMicrotask(() => location.assign(target.toString()));
+      leaveFor(target.toString());
       return { status: 'ok', acked: true };
     }
 
