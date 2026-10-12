@@ -1,4 +1,9 @@
-import { ActionEnvelope, type ActionResult, type PageContext } from '@wayfinder/contracts';
+import {
+  ServerMessage,
+  type ActionResult,
+  type PageContext,
+  type TranscriptTurn,
+} from '@wayfinder/contracts';
 import { executeAction } from './action-executor.js';
 import type { WidgetConfig } from './config.js';
 import type { SessionHandle } from './session-client.js';
@@ -18,8 +23,13 @@ export class ActionSocket {
   #retry?: ReturnType<typeof setTimeout>;
   /** Repeats are no-ops: without this a retried add after a dropped socket double-charges. */
   readonly #seen = new Set<string>();
+  #onTranscript?: (turn: TranscriptTurn) => void;
 
   constructor(private readonly config: WidgetConfig) {}
+
+  onTranscript(handler: (turn: TranscriptTurn) => void): void {
+    this.#onTranscript = handler;
+  }
 
   open(handle: SessionHandle): void {
     this.close();
@@ -79,12 +89,18 @@ export class ActionSocket {
   }
 
   async #dispatch(raw: string): Promise<void> {
-    let envelope;
+    let message;
     try {
-      envelope = ActionEnvelope.parse(JSON.parse(raw));
+      message = ServerMessage.parse(JSON.parse(raw));
     } catch {
       return;
     }
+
+    if (message.type === 'transcript_update') {
+      this.#onTranscript?.(message.turn);
+      return;
+    }
+    const envelope = message;
 
     if (this.#seen.has(envelope.idempotency_key)) return;
     this.#seen.add(envelope.idempotency_key);

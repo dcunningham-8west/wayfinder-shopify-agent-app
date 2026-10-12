@@ -34,6 +34,9 @@ Legs** — one RetellAI web call each. Navigation ends a leg; the widget opens t
 
 - The widget captures the transcript live from Retell `update` events and, on `pagehide`,
   `navigator.sendBeacon`s a snapshot to the backend keyed by session id.
+  _(Superseded 2026-10-12: SDK v3 no longer delivers the transcript to the browser. The backend
+  reads it from Retell's call-monitor socket instead; see
+  [spec section 03](../spec/03-session-lifecycle.md#handoff).)_
 - The browser carries **only the session id**, in `sessionStorage`.
 - The backend assembles the **Session Seed** for each new leg: replayed transcript, a
   **Cart Snapshot**, the current page, and whether the agent caused the navigation.

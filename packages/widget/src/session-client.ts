@@ -1,9 +1,4 @@
-import {
-  TRANSCRIPT_TAIL_TURNS,
-  TranscriptHandoff,
-  type PageContext,
-  type TranscriptTurn,
-} from '@wayfinder/contracts';
+import type { PageContext } from '@wayfinder/contracts';
 import type { WidgetConfig } from './config.js';
 
 /**
@@ -82,31 +77,6 @@ export class SessionClient {
 
     const body = (await response.json()) as { reconnect?: unknown };
     return body.reconnect === true;
-  }
-
-  handoff(transcript: TranscriptTurn[]): boolean {
-    const handle = this.#handle;
-    if (!handle) return false;
-
-    const recentTranscript = transcript.slice(-TRANSCRIPT_TAIL_TURNS).map((turn) => ({
-      ...turn,
-      text: turn.text.slice(-2000),
-    }));
-    const payload = TranscriptHandoff.safeParse({
-      session_token: handle.token,
-      transcript: recentTranscript,
-    });
-    if (!payload.success) return false;
-
-    const blob = new Blob([JSON.stringify(payload.data)], { type: 'text/plain' });
-    try {
-      return navigator.sendBeacon(
-        `${this.config.backendUrl}/sessions/${handle.id}/handoff`,
-        blob,
-      );
-    } catch {
-      return false;
-    }
   }
 
   /** `sessionStorage`, not `localStorage`: a Session is a visit, not an identity. */

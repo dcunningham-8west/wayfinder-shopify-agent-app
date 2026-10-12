@@ -5,6 +5,7 @@ import {
   type Action,
   type ActionFailure,
   type IdempotencyKey,
+  type ServerMessage,
   type SessionId,
 } from '@wayfinder/contracts';
 
@@ -47,6 +48,15 @@ export class ActionChannel {
 
   isConnected(sessionId: SessionId): boolean {
     return this.#sockets.has(sessionId);
+  }
+
+  /** Fire-and-forget: nothing waits on a transcript line reaching the page. */
+  notify(sessionId: SessionId, message: ServerMessage): void {
+    try {
+      this.#sockets.get(sessionId)?.send(JSON.stringify(message));
+    } catch {
+      // The socket is closing; the next leg's socket carries on.
+    }
   }
 
   /**

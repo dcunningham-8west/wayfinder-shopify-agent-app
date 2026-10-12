@@ -28,6 +28,9 @@ export interface Session {
   agentCausedNavigation: boolean;
   agentReconnectPending: boolean;
   legCount: number;
+  currentLegId?: CallLegId;
+  /** Where the current leg's turns begin in `transcript`; earlier turns belong to past legs. */
+  legTranscriptStart: number;
   lastLegCreatedAt?: number;
   lastSeenAt: number;
 }
@@ -49,6 +52,7 @@ export class SessionStore {
       agentCausedNavigation: false,
       agentReconnectPending: false,
       legCount: 0,
+      legTranscriptStart: 0,
       lastSeenAt: this.now(),
     };
     this.#sessions.set(session.id, session);
@@ -105,9 +109,12 @@ export class SessionStore {
     return pending;
   }
 
-  appendTranscript(session: Session, turns: TranscriptTurn[]): void {
-    session.transcript.push(...turns);
+  /** Replaces the current leg's turns; false for a leg that has since been superseded. */
+  setLegTranscript(session: Session, legId: CallLegId, turns: TranscriptTurn[]): boolean {
+    if (session.currentLegId !== legId) return false;
+    session.transcript.splice(session.legTranscriptStart, Infinity, ...turns);
     session.lastSeenAt = this.now();
+    return true;
   }
 
   /** Enforced here, not on the socket: sockets are cheap, Call Legs cost money. */
@@ -119,7 +126,10 @@ export class SessionStore {
     session.legCount += 1;
     session.lastLegCreatedAt = this.now();
     session.lastSeenAt = this.now();
-    return `${session.id}-${session.legCount}` as CallLegId;
+    const legId = `${session.id}-${session.legCount}` as CallLegId;
+    session.currentLegId = legId;
+    session.legTranscriptStart = session.transcript.length;
+    return legId;
   }
 
   get size(): number {

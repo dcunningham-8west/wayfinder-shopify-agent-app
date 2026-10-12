@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CartLineKey, Facet, Money, ProductId, TargetId, VariantId } from './identity.js';
 import { PageContext } from './page-context.js';
+import { TranscriptUpdate } from './session.js';
 
 /**
  * Section 06. An Action always executes in the browser, always returns an outcome, and never
@@ -180,7 +181,7 @@ export const PageContextUpdate = z
   .strict();
 export type PageContextUpdate = z.infer<typeof PageContextUpdate>;
 
-export const ServerMessage = z.discriminatedUnion('type', [ActionEnvelope]);
+export const ServerMessage = z.discriminatedUnion('type', [ActionEnvelope, TranscriptUpdate]);
 export type ServerMessage = z.infer<typeof ServerMessage>;
 
 export const ClientMessage = z.discriminatedUnion('type', [ActionResult, PageContextUpdate]);

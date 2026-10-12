@@ -65,12 +65,17 @@ deploy therefore costs a shopper their history, not their call.
 
 ## Handoff
 
-On `pagehide`, **and only if a leg was live**, the widget beacons its transcript snapshot to
-the backend. Navigations made in Standby carry nothing — the session id is already in
-`sessionStorage`.
+The backend follows each Call Leg's live transcript itself, over Retell's call-monitor
+WebSocket authenticated with the API key, and stores the leg's turns on the Session as they
+arrive. Nothing needs to happen at `pagehide`: by the time the next leg opens, the previous
+leg's turns are already server-side.
 
-Use the beacon API, not a normal request: the page is unloading and an ordinary fetch is not
-guaranteed to complete.
+The same stream feeds the widget: the backend pushes the latest line over the Action Envelope
+socket as a `transcript_update`, for subtitles and the Preview Panel.
+
+**Why not a browser beacon (the original design):** on Retell SDK v3 the web client no longer
+receives the transcript at all — it moved to the monitor socket, which needs the API key. A
+beacon had nothing to send.
 
 ## Session Seed
 

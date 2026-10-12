@@ -5,7 +5,7 @@ import { mountPreviewPanel } from './preview-panel.js';
 import { SessionClient, takeAgentNavigationMarker } from './session-client.js';
 import { setAgentTalking } from './speech.js';
 import { mountUi } from './ui.js';
-import { TIMING, type PreviewTile, type TranscriptTurn } from '@wayfinder/contracts';
+import { TIMING, type PreviewTile } from '@wayfinder/contracts';
 import type { VoiceClient } from './voice.js';
 
 const REFUSALS: Record<string, string> = {
@@ -33,7 +33,12 @@ function boot(): void {
 
   let voice: VoiceClient | undefined;
   let starting = false;
-  const legTranscript: TranscriptTurn[] = [];
+
+  // The backend relays Retell's live transcript; the SDK no longer delivers it to the page.
+  socket.onTranscript((turn) => {
+    ui.setTranscript(turn.role === 'agent' ? 'Assistant' : 'You', turn.text);
+    if (turn.role === 'agent') preview?.follow(turn.text);
+  });
 
   // 600 kb of WebRTC that a shopper who never speaks should never pay for.
   async function loadVoice(): Promise<VoiceClient> {
@@ -53,15 +58,6 @@ function boot(): void {
         setAgentTalking(talking);
         ui.setListening(!talking);
         ui.setStatus(talking ? 'SPEAKING' : 'LISTENING');
-      },
-      onTranscript: (transcript) => {
-        if (transcript.length === 0) return;
-        legTranscript.splice(0, legTranscript.length, ...transcript);
-        const lastTurn = transcript.at(-1);
-        if (lastTurn) {
-          ui.setTranscript(lastTurn.role === 'agent' ? 'Assistant' : 'You', lastTurn.text);
-          if (lastTurn.role === 'agent') preview?.follow(lastTurn.text);
-        }
       },
     });
     return voice;
@@ -85,7 +81,6 @@ function boot(): void {
       return undefined;
     }
 
-    legTranscript.length = 0;
     ui.setStatus(reconnecting ? 'RECONNECTING' : 'CONNECTING');
     try {
       const [client, leg] = await Promise.all([loadVoice(), sessions.startCallLeg(pageContext)]);
@@ -168,7 +163,6 @@ function boot(): void {
   });
 
   window.addEventListener('pagehide', () => {
-    if (voice?.live) sessions.handoff(legTranscript);
     voice?.stop();
     socket.close();
   });

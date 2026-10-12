@@ -11,6 +11,7 @@ import { registerSessionRoutes } from './routes/session.js';
 import { toolWebhookPlugin } from './routes/tool-webhook.js';
 import { SessionStore } from './session/session-store.js';
 import { RetellVoiceProvider } from './voice/voice-provider.js';
+import { TranscriptRelay } from './voice/transcript-relay.js';
 
 export async function buildServer(config = loadConfig()) {
   const app = Fastify({ logger: true });
@@ -46,6 +47,7 @@ export async function buildServer(config = loadConfig()) {
     voice: config.retellAgentId
       ? new RetellVoiceProvider(config.retellApiKey, config.retellAgentId)
       : undefined,
+    transcripts: new TranscriptRelay(config.retellApiKey, sessions, actions, app.log),
   });
 
   await app.register(toolWebhookPlugin, {

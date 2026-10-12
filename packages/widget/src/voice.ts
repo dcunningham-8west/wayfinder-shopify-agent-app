@@ -1,5 +1,4 @@
 import { RetellWebClient } from 'retell-client-js-sdk';
-import type { TranscriptTurn } from '@wayfinder/contracts';
 
 /**
  * The shopper grants microphone access on the initial click; silent reconnect relies on the
@@ -10,24 +9,6 @@ export interface VoiceEvents {
   onStarted: () => void;
   onEnded: () => void;
   onAgentTalking: (talking: boolean) => void;
-  onTranscript: (transcript: TranscriptTurn[]) => void;
-}
-
-interface TranscriptEntry {
-  role?: string;
-  content?: unknown;
-  text?: unknown;
-}
-
-function transcriptSnapshot(update: unknown): TranscriptTurn[] {
-  const transcript = (update as { transcript?: unknown })?.transcript;
-  if (!Array.isArray(transcript)) return [];
-  return transcript.flatMap((raw) => {
-    const entry = raw as TranscriptEntry;
-    const text = typeof entry.content === 'string' ? entry.content : entry.text;
-    if (typeof text !== 'string' || !text) return [];
-    return [{ role: entry.role === 'user' ? 'shopper' : 'agent', text }];
-  });
 }
 
 export class VoiceClient {
@@ -45,7 +26,6 @@ export class VoiceClient {
     });
     this.#client.on('agent_start_talking', () => events.onAgentTalking(true));
     this.#client.on('agent_stop_talking', () => events.onAgentTalking(false));
-    this.#client.on('update', (update: unknown) => events.onTranscript(transcriptSnapshot(update)));
   }
 
   get live(): boolean {

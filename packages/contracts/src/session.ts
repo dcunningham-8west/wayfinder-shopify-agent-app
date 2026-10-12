@@ -15,13 +15,11 @@ export const TranscriptTurn = z
   .strict();
 export type TranscriptTurn = z.infer<typeof TranscriptTurn>;
 
-export const TranscriptHandoff = z
-  .object({
-    session_token: z.string().min(1),
-    transcript: z.array(TranscriptTurn).max(TRANSCRIPT_TAIL_TURNS),
-  })
+/** Backend → widget. The browser cannot read Retell's live transcript without our API key. */
+export const TranscriptUpdate = z
+  .object({ type: z.literal('transcript_update'), turn: TranscriptTurn })
   .strict();
-export type TranscriptHandoff = z.infer<typeof TranscriptHandoff>;
+export type TranscriptUpdate = z.infer<typeof TranscriptUpdate>;
 
 /**
  * Section 11. Replaced wholesale, except when the shopper navigates *into* a member of the
