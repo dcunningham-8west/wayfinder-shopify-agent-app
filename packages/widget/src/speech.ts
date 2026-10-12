@@ -35,10 +35,11 @@ function within(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
  */
 const WAIT_FOR_SPEECH_MS = 4_000;
 /**
- * Retell streams speech in chunks, so `agent_stop_talking` fires between sentences as well as
- * at the end of a turn. Only quiet that lasts counts as finished.
+ * Retell streams speech in chunks, so `agent_stop_talking` fires between sentences too. Gaps
+ * within a turn are short; the long wait is only ever for the model, and that is over once the
+ * post-Action line has started.
  */
-const SUSTAINED_QUIET_MS = 2_500;
+const SUSTAINED_QUIET_MS = 1_200;
 /** Caps the wait when the agent says nothing, or says a great deal. */
 const MAX_TOTAL_MS = 20_000;
 
@@ -47,7 +48,7 @@ export async function whenAgentFinishesSpeaking(): Promise<void> {
 
   // Speech already underway is the pre-Action line; the post-Action one still has to arrive.
   if (talking) await within(() => !talking, deadline - Date.now());
-  await within(() => talking, WAIT_FOR_SPEECH_MS);
+  if (!(await within(() => talking, WAIT_FOR_SPEECH_MS))) return;
 
   while (Date.now() < deadline) {
     if (talking) {

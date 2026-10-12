@@ -180,7 +180,7 @@ Confirmed fixed on a clean load. The agent reaches the product page.
 
 - **Found:** 2026-10-10
 - **Class:** prompt, and architecture
-- **Status:** first fix failed verification; refixed, unverified
+- **Status:** fixed after two failed attempts; verified
 - **Caused by:** the KF-001 guardrail. This is a regression we wrote.
 
 ### Observed
@@ -263,6 +263,11 @@ post-Action line to begin and `2.5 s` of quiet to call it finished. Cap raised t
 **Lesson: a timing window has to be measured against the slowest thing it is waiting for.**
 `900 ms` was chosen to span a gap between sentences; it was then asked to span a model round
 trip.
+
+Verified fixed. The trailing pause before the page changed was then trimmed by separating the
+two waits properly: `4 s` for the post-Action line to *start* (a model round trip), but only
+`1.2 s` of quiet to call it *finished* (a gap between chunks). The long wait was only ever for
+the model, and that is over once speech has begun.
 
 ## KF-004 — "The page connection dropped", and it never came back
 
