@@ -219,8 +219,8 @@ produced a defect in the gap between them.
 ### Resolution
 
 - [`speech.ts`](../packages/widget/src/speech.ts): a small gate fed by the SDK's
-  `agent_start_talking` / `agent_stop_talking` events. Navigation now waits for the agent to
-  start speaking (1.5 s window) and then finish (6 s cap) before `location.assign`. The Action is
+  `agent_start_talking` / `agent_stop_talking` events. Navigation waits for the agent to finish
+  before `location.assign`. The Action is
   still **acked immediately**, so the agent's turn is not held open — only the leaving is
   deferred. Both `navigate` and `open_product` go through it.
 - Guardrail rewritten as **"Do not move the shopper without being asked"**: answering a question
@@ -243,8 +243,64 @@ The gate worked; it was listening to the wrong thing. **Retell streams speech in
 visible in every transcript in this file ("I'm " / "looking now."). The widget waited for the
 first stop, which arrived mid-turn, and left during the gap.
 
-Now the gate requires **sustained quiet**: after speech stops it waits `900 ms` to see whether
-the agent resumes, and only leaves if it does not. Caps at 12 s overall.
+Now the gate requires **sustained quiet**: after speech stops it waits to see whether the agent
+resumes, and only leaves if it does not.
 
 **Lesson: "stopped talking" and "finished speaking" are different events,** and a streaming TTS
 only gives you the first one.
+
+### Follow-up 2: the quiet window was shorter than the agent's think
+
+Still cut off. The remaining gap was the **post-Action** line. `speak_after_execution` is true,
+so the sequence is: agent speaks its pre-Action line → tool runs → widget acks → agent *thinks*
+→ agent speaks the line that matters. The gate started while the pre-Action line was still
+playing, saw it end, waited `900 ms`, heard nothing — because an LLM turn plus a TTS start takes
+longer than that — and left. The agent then spoke into an unloading page.
+
+The gate now skips any speech already in flight when the Action lands, then allows `4 s` for the
+post-Action line to begin and `2.5 s` of quiet to call it finished. Cap raised to `20 s`.
+
+**Lesson: a timing window has to be measured against the slowest thing it is waiting for.**
+`900 ms` was chosen to span a gap between sentences; it was then asked to span a model round
+trip.
+
+## KF-004 — "The page connection dropped", and it never came back
+
+- **Found:** 2026-10-12
+- **Class:** architecture
+- **Status:** fixed, unverified
+- **Frequency:** one run in two.
+
+### Observed
+
+```
+Agent: "I couldn't open it because the page connection dropped. Please try again when it
+        reconnects."
+User:  "What do you mean by the page connection?"
+Agent: "It means the store page briefly wasn't available for me to open the product. You can
+        refresh the page, then I can try again."
+```
+
+A manual refresh fixed it. The agent's explanation was accurate, which is the one good thing
+here — but "refresh the page" is not a thing a voice shopper should ever be told.
+
+### Diagnosis
+
+[`action-socket.ts`](../packages/widget/src/action-socket.ts) opened the WebSocket once and
+listened only for `message`. There was no `close` handler, so **any** drop was permanent for the
+life of the page: an idle proxy timeout, a backgrounded tab, a Wi-Fi blip. The Call Leg kept
+running, the voice kept working, and the backend's `page_connected` went false forever. Every
+subsequent Action failed with the agent dutifully reporting it.
+
+ADR-0001 covers reconnect across **page loads**. Nobody owned reconnect **within** one.
+
+### Resolution
+
+The socket now retries on close with backoff (0.5 s → 10 s), resets on a successful open, and
+stops permanently on `4401 unknown_session` or an explicit `close()`. The `#seen` idempotency set
+already covered the replayed-Action risk that reconnect introduces.
+
+### Lesson
+
+**A long-lived socket without a close handler is a socket that works until it doesn't.** The
+reconnect story was written for the loud failure (navigation) and skipped the quiet one.
