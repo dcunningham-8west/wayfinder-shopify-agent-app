@@ -1,5 +1,6 @@
 import { Retell } from 'retell-sdk';
 import { RETELL_DATA_STORAGE, type SessionSeed } from '@wayfinder/contracts';
+import { promptVariables } from '../session/seed.js';
 
 /** The seam Retell sits behind, so Session and Seed logic stays testable without a network. */
 export interface WebCall {
@@ -27,8 +28,7 @@ export class RetellVoiceProvider implements VoiceProvider {
   async createWebCall(seed: SessionSeed): Promise<WebCall> {
     const call = await this.#client.call.createWebCall({
       agent_id: this.agentId,
-      // The Seed rides in as dynamic variables; Retell interpolates them into the prompt.
-      retell_llm_dynamic_variables: { wayfinder_seed: JSON.stringify(seed) },
+      retell_llm_dynamic_variables: promptVariables(seed),
       metadata: { session_id: seed.session_id, call_leg_id: seed.call_leg_id },
       // Repeated per leg: a dashboard default that silently reverts to keep-forever is the
       // wrong failure direction, so the leg never inherits it.

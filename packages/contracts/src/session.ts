@@ -77,6 +77,8 @@ export const SessionSeed = z
     page_context: PageContext,
     action_targets: z.array(TargetId).default([]),
     catalogue_digest: z.string().optional(),
+    /** True on every leg after the first; the prompt cannot infer it from the brief's presence. */
+    resumed: z.boolean(),
     /** Lets the agent speak naturally about why the page changed. */
     agent_caused_navigation: z.boolean(),
   })

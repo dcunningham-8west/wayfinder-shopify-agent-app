@@ -86,6 +86,7 @@ Assembled server-side and injected into every new Call Leg. Contents:
 | Action Target registry | What can be acted on | **Never** |
 | Catalogue Digest | Catalogue shape, no tool call needed | Dropped last |
 | Agent-caused-navigation flag | Lets the agent speak naturally about why the page changed | **Never** |
+| Resumed flag | First leg greets; every later leg continues without greeting | **Never** |
 
 ### Hard budget: under 4,000 tokens
 

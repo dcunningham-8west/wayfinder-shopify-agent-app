@@ -119,3 +119,8 @@ The Session Seed is assembled **server-side** and injected per Call Leg
 
 Server-side assembly is what lets Replay Policy change without a storefront release — the
 browser carries only a session id and never holds the transcript.
+
+The Seed reaches the prompt as three dynamic variables: `wayfinder_continuity`
+(`first_call` / `resumed` / `resumed_after_your_navigation`), which the `continuity` file
+switches on; `wayfinder_recent_turns`, the verbatim tail rendered as dialogue so the agent
+continues it rather than reads it as data; and `wayfinder_seed`, the rest as JSON.

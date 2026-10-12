@@ -1,6 +1,6 @@
 import { PageContext, TranscriptHandoff, type SessionId } from '@wayfinder/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { assembleSeed } from '../session/seed.js';
+import { assembleSeed, continuityMode } from '../session/seed.js';
 import type { Session, SessionStore } from '../session/session-store.js';
 import type { VoiceProvider } from '../voice/voice-provider.js';
 
@@ -44,6 +44,10 @@ export function registerSessionRoutes(
     if (!session) return reply.code(404).send({ error: 'unknown_session' });
 
     sessions.appendTranscript(session, handoff.data.transcript);
+    request.log.info(
+      { session_id: session.id, turns: handoff.data.transcript.length },
+      'transcript handoff',
+    );
     return reply.code(204).send();
   });
 
@@ -84,7 +88,15 @@ export function registerSessionRoutes(
     session.agentCausedNavigation = false;
 
     request.log.info(
-      { session_id: session.id, call_leg_id: callLegId, seed_tokens: estimatedTokens, shed },
+      {
+        session_id: session.id,
+        call_leg_id: callLegId,
+        seed_tokens: estimatedTokens,
+        shed,
+        continuity: continuityMode(seed),
+        replayed_turns: seed.verbatim_tail.length,
+        transcript_turns: session.transcript.length,
+      },
       'call leg created',
     );
 

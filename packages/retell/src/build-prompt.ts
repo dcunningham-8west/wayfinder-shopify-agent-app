@@ -39,9 +39,17 @@ function generatedToolGuidance(): string {
   ].join('\n');
 }
 
-/** The brief is absent on a first leg; the continuity rules turn on exactly that. */
+/** Rendered per Call Leg by the backend; the continuity rules switch on the first line. */
 const SEED_SECTION = [
   '# Session brief',
+  '',
+  'Continuity: {{wayfinder_continuity}}',
+  '',
+  '## Conversation so far (most recent last)',
+  '',
+  '{{wayfinder_recent_turns}}',
+  '',
+  '## Context',
   '',
   '{{wayfinder_seed}}',
 ].join('\n');

@@ -35,10 +35,31 @@ export function assembleSeed(inputs: SeedInputs): SeedResult {
     page_context: pageContext,
     action_targets: inputs.actionTargets ?? [],
     catalogue_digest: inputs.catalogueDigest,
+    resumed: session.legCount > 1 || session.transcript.length > 0,
     agent_caused_navigation: session.agentCausedNavigation,
   };
 
   return degrade(seed);
+}
+
+export type ContinuityMode = 'first_call' | 'resumed' | 'resumed_after_your_navigation';
+
+export function continuityMode(seed: SessionSeed): ContinuityMode {
+  if (seed.agent_caused_navigation) return 'resumed_after_your_navigation';
+  return seed.resumed ? 'resumed' : 'first_call';
+}
+
+/** Retell variables are strings; turns read as dialogue, not data, so the agent continues them. */
+export function promptVariables(seed: SessionSeed): Record<string, string> {
+  const { verbatim_tail, resumed, agent_caused_navigation, ...context } = seed;
+  const turns = verbatim_tail
+    .map((turn) => `${turn.role === 'agent' ? 'You' : 'Shopper'}: ${turn.text}`)
+    .join('\n');
+  return {
+    wayfinder_continuity: continuityMode(seed),
+    wayfinder_recent_turns: turns || '(none)',
+    wayfinder_seed: JSON.stringify(context),
+  };
 }
 
 /**
