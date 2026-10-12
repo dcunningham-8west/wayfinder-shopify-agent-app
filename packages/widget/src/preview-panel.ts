@@ -12,7 +12,9 @@ export interface PreviewPanel {
   follow(agentUtterance: string): void;
 }
 
-const IGNORED_WORDS = new Set(['the', 'and', 'with', 'for', 'from']);
+const IGNORED_WORDS = new Set(['the', 'and', 'with', 'for', 'from', 'this', 'that', 'one']);
+/** Spoken names run a few words; a wider window lets the previous product's name leak in. */
+const MATCH_WINDOW_WORDS = 6;
 
 function words(text: string): string[] {
   return (
@@ -22,17 +24,54 @@ function words(text: string): string[] {
       .normalize('NFKD')
       .replace(/[\u0300-\u036f]/g, '')
       .match(/[a-z0-9]+/g) ?? []
-  );
+  ).map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
 }
 
-/** Words that name one tile and no other; shared words like "gift set" cannot pick a tile. */
-function distinctiveWords(tiles: PreviewTile[]): Set<string>[] {
-  const perTile = tiles.map(
+interface Matcher {
+  tileWords: Set<string>[];
+  /** Rarer across tiles weighs more; a word every tile shares weighs nothing. */
+  weight: Map<string, number>;
+}
+
+/** The catalogue is a scent × format grid, so tiles often share a scent and differ by one word. */
+function buildMatcher(tiles: PreviewTile[]): Matcher {
+  const tileWords = tiles.map(
     (tile) => new Set(words(tile.title).filter((w) => w.length > 2 && !IGNORED_WORDS.has(w))),
   );
   const counts = new Map<string, number>();
-  for (const set of perTile) for (const w of set) counts.set(w, (counts.get(w) ?? 0) + 1);
-  return perTile.map((set) => new Set([...set].filter((w) => counts.get(w) === 1)));
+  for (const set of tileWords) for (const w of set) counts.set(w, (counts.get(w) ?? 0) + 1);
+  const weight = new Map<string, number>();
+  for (const [w, count] of counts) weight.set(w, Math.log(tiles.length / count));
+  return { tileWords, weight };
+}
+
+/** The tile named most recently in the utterance, or -1 if none is clearly named. */
+function latestNamedTile(matcher: Matcher, utterance: string): number {
+  const spoken = words(utterance);
+  for (let end = spoken.length; end > 0; end -= 1) {
+    const last = spoken[end - 1] ?? '';
+    // Only a window ending on a naming word counts, so the match lands where the name was said.
+    if (!matcher.weight.get(last)) continue;
+
+    // The word just said picks the candidates; earlier words only separate those that share it.
+    const candidates = matcher.tileWords.flatMap((set, i) => (set.has(last) ? [i] : []));
+    if (candidates.length === 1) return candidates[0] ?? -1;
+
+    // Widen backwards until one candidate leads: "the smaller 200g" leans on the scent said before.
+    for (let start = end - MATCH_WINDOW_WORDS; ; start -= MATCH_WINDOW_WORDS) {
+      const window = new Set(spoken.slice(Math.max(0, start), end));
+      const scores = candidates.map((i) =>
+        [...window].reduce(
+          (sum, w) => sum + (matcher.tileWords[i]?.has(w) ? (matcher.weight.get(w) ?? 0) : 0),
+          0,
+        ),
+      );
+      const best = Math.max(...scores);
+      if (scores.filter((s) => s === best).length === 1) return candidates[scores.indexOf(best)] ?? -1;
+      if (start <= 0) break;
+    }
+  }
+  return -1;
 }
 
 function sameOriginHref(url: string): string | undefined {
@@ -93,7 +132,8 @@ export function mountPreviewPanel(root: HTMLElement): PreviewPanel | undefined {
   if (!panel || !inner) return undefined;
 
   let cards: HTMLElement[] = [];
-  let distinctive: Set<string>[] = [];
+  let titles: string[] = [];
+  let matcher: Matcher = { tileWords: [], weight: new Map() };
   let active = -1;
 
   const setActive = (index: number): void => {
@@ -104,7 +144,8 @@ export function mountPreviewPanel(root: HTMLElement): PreviewPanel | undefined {
     if (!current) return;
     current.classList.remove('is-viewed');
     current.classList.add('is-active');
-    inner.scrollTo({ top: current.offsetTop - inner.offsetTop, behavior: 'smooth' });
+    const offset = current.getBoundingClientRect().top - inner.getBoundingClientRect().top;
+    inner.scrollTo({ top: inner.scrollTop + offset, behavior: 'smooth' });
   };
 
   const hide = (): void => {
@@ -129,7 +170,8 @@ export function mountPreviewPanel(root: HTMLElement): PreviewPanel | undefined {
       cards = renderable.map(({ tile, href }) => card(tile, href));
       grid.append(...cards);
       inner.replaceChildren(grid);
-      distinctive = distinctiveWords(renderable.map((r) => r.tile));
+      matcher = buildMatcher(renderable.map((r) => r.tile));
+      titles = renderable.map((r) => r.tile.title);
       active = -1;
       setActive(0);
 
@@ -142,18 +184,10 @@ export function mountPreviewPanel(root: HTMLElement): PreviewPanel | undefined {
 
     follow(agentUtterance) {
       if (!panel.classList.contains('is-open')) return;
-      const spoken = words(agentUtterance);
-      let best = -1;
-      let bestPosition = -1;
-      // The most recently named product wins: one utterance often walks through several.
-      spoken.forEach((word, position) => {
-        const tile = distinctive.findIndex((set) => set.has(word));
-        if (tile >= 0 && position > bestPosition) {
-          best = tile;
-          bestPosition = position;
-        }
-      });
-      if (best >= 0) setActive(best);
+      const named = latestNamedTile(matcher, agentUtterance);
+      if (named < 0 || named === active) return;
+      console.debug('[wayfinder] preview follows', titles[named]);
+      setActive(named);
     },
   };
 }
