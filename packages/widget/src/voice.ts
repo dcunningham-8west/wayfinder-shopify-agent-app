@@ -66,6 +66,11 @@ export class VoiceClient {
     });
   }
 
+  /** Autoplay is blocked without a gesture, so an auto-reconnected leg can be live but silent. */
+  resumeAudio(): Promise<void> {
+    return this.#client.startAudioPlayback();
+  }
+
   stop(): void {
     this.#client.stopCall();
   }

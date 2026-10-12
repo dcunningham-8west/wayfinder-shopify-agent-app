@@ -14,6 +14,12 @@ const REFUSALS: Record<string, string> = {
   failed: 'UNAVAILABLE',
 };
 
+const START_TIMEOUT_MS = 15_000;
+
+function warn(message: string, detail?: unknown): void {
+  console.warn(`[wayfinder] ${message}`, detail ?? '');
+}
+
 function boot(): void {
   const root = document.querySelector<HTMLElement>('.nav-voice-container');
   if (!root) return;
@@ -58,7 +64,14 @@ function boot(): void {
   }
 
   async function start(reconnecting = false): Promise<'rate_limited' | undefined> {
-    if (starting || voice?.live) return undefined;
+    if (voice?.live) {
+      if (!reconnecting) unlockAudio();
+      return undefined;
+    }
+    if (starting) {
+      warn('start ignored: a leg is already starting');
+      return undefined;
+    }
     starting = true;
     const pageContext = readPageContext();
     if (!pageContext) {
@@ -72,6 +85,7 @@ function boot(): void {
     try {
       const [client, leg] = await Promise.all([loadVoice(), sessions.startCallLeg(pageContext)]);
       if (typeof leg === 'string') {
+        warn('call leg refused', leg);
         if (!(reconnecting && leg === 'rate_limited')) {
           ui.setStatus(REFUSALS[leg] ?? 'UNAVAILABLE');
         }
@@ -81,8 +95,19 @@ function boot(): void {
       const handle = sessions.handle;
       if (handle) socket.open(handle);
       // Reconnects rely on the same-origin microphone grant from the initial click.
-      await client.start(leg);
-    } catch {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timedOut = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('voice start timed out')), START_TIMEOUT_MS);
+      });
+      try {
+        await Promise.race([client.start(leg), timedOut]);
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (error) {
+      warn(reconnecting ? 'reconnect failed' : 'start failed', error);
+      voice?.stop();
+      socket.close();
       ui.setStatus('UNAVAILABLE');
     } finally {
       starting = false;
@@ -97,6 +122,7 @@ function boot(): void {
     try {
       if (starting || voice?.live) return;
       if (!(await sessions.shouldReconnect())) {
+        warn('reconnect skipped: backend has no pending agent navigation');
         ui.setStatus('UNAVAILABLE');
         return;
       }
@@ -108,10 +134,20 @@ function boot(): void {
         refusal = await start(true);
         if (refusal) ui.setStatus(REFUSALS[refusal] ?? 'UNAVAILABLE');
       }
-    } catch {
+    } catch (error) {
+      warn('reconnect check failed', error);
       ui.setStatus('UNAVAILABLE');
     }
   }
+
+  function unlockAudio(): void {
+    if (!voice?.live) return;
+    voice.resumeAudio().catch((error: unknown) => warn('audio resume failed', error));
+  }
+
+  // The first interaction after a silent reconnect is the gesture autoplay was waiting for.
+  document.addEventListener('pointerdown', unlockAudio, true);
+  document.addEventListener('keydown', unlockAudio, true);
 
   ui.onStart(() => void start());
   ui.onEnd(() => voice?.stop());
