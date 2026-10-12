@@ -8,6 +8,21 @@ import { PageContext } from './page-context.js';
 export const SessionMode = z.enum(['standby', 'live']);
 export type SessionMode = z.infer<typeof SessionMode>;
 
+export const TRANSCRIPT_TAIL_TURNS = 4;
+
+export const TranscriptTurn = z
+  .object({ role: z.enum(['agent', 'shopper']), text: z.string().min(1).max(2000) })
+  .strict();
+export type TranscriptTurn = z.infer<typeof TranscriptTurn>;
+
+export const TranscriptHandoff = z
+  .object({
+    session_token: z.string().min(1),
+    transcript: z.array(TranscriptTurn).max(TRANSCRIPT_TAIL_TURNS),
+  })
+  .strict();
+export type TranscriptHandoff = z.infer<typeof TranscriptHandoff>;
+
 /**
  * Section 11. Replaced wholesale, except when the shopper navigates *into* a member of the
  * set — a plain replace there destroys the shortlist the navigation is acting on.

@@ -1,4 +1,4 @@
-import { PageContext, type SessionId } from '@wayfinder/contracts';
+import { PageContext, TranscriptHandoff, type SessionId } from '@wayfinder/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { assembleSeed } from '../session/seed.js';
 import type { Session, SessionStore } from '../session/session-store.js';
@@ -22,6 +22,35 @@ export function registerSessionRoutes(
     request.log.info({ session_id: session.id }, 'session created');
     // The token is returned once and held in sessionStorage; it is never logged.
     return reply.code(201).send({ session_id: session.id, session_token: session.token });
+  });
+
+  app.post('/sessions/:id/handoff', async (request, reply) => {
+    let body: unknown = request.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body) as unknown;
+      } catch {
+        return reply.code(400).send({ error: 'malformed_body' });
+      }
+    }
+
+    const handoff = TranscriptHandoff.safeParse(body);
+    if (!handoff.success) return reply.code(400).send({ error: 'invalid_handoff' });
+
+    const id = (request.params as { id?: string }).id;
+    const session = id
+      ? sessions.resume(id as SessionId, handoff.data.session_token)
+      : undefined;
+    if (!session) return reply.code(404).send({ error: 'unknown_session' });
+
+    sessions.appendTranscript(session, handoff.data.transcript);
+    return reply.code(204).send();
+  });
+
+  app.get('/sessions/:id/reconnect', async (request, reply) => {
+    const session = authorise(request, sessions);
+    if (!session) return reply.code(404).send({ error: 'unknown_session' });
+    return { reconnect: sessions.takeAgentReconnect(session) };
   });
 
   app.post('/sessions/:id/call-legs', async (request, reply) => {

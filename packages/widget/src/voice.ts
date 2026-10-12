@@ -1,15 +1,16 @@
 import { RetellWebClient } from 'retell-client-js-sdk';
+import type { TranscriptTurn } from '@wayfinder/contracts';
 
 /**
- * Section 07. The SDK owns the microphone prompt, which is why starting a call must happen
- * inside a user gesture — a leg resumed without one is refused by the browser.
+ * The shopper grants microphone access on the initial click; silent reconnect relies on the
+ * same-origin permission persisting across page loads.
  */
 
 export interface VoiceEvents {
   onStarted: () => void;
   onEnded: () => void;
   onAgentTalking: (talking: boolean) => void;
-  onTranscript: (role: 'agent' | 'shopper', text: string) => void;
+  onTranscript: (transcript: TranscriptTurn[]) => void;
 }
 
 interface TranscriptEntry {
@@ -18,10 +19,15 @@ interface TranscriptEntry {
   text?: unknown;
 }
 
-function lastUtterance(update: unknown): TranscriptEntry | undefined {
+function transcriptSnapshot(update: unknown): TranscriptTurn[] {
   const transcript = (update as { transcript?: unknown })?.transcript;
-  if (!Array.isArray(transcript)) return undefined;
-  return transcript.at(-1) as TranscriptEntry | undefined;
+  if (!Array.isArray(transcript)) return [];
+  return transcript.flatMap((raw) => {
+    const entry = raw as TranscriptEntry;
+    const text = typeof entry.content === 'string' ? entry.content : entry.text;
+    if (typeof text !== 'string' || !text) return [];
+    return [{ role: entry.role === 'user' ? 'shopper' : 'agent', text }];
+  });
 }
 
 export class VoiceClient {
@@ -39,12 +45,7 @@ export class VoiceClient {
     });
     this.#client.on('agent_start_talking', () => events.onAgentTalking(true));
     this.#client.on('agent_stop_talking', () => events.onAgentTalking(false));
-    this.#client.on('update', (update: unknown) => {
-      const entry = lastUtterance(update);
-      const text = typeof entry?.content === 'string' ? entry.content : entry?.text;
-      if (typeof text !== 'string' || !text) return;
-      events.onTranscript(entry?.role === 'user' ? 'shopper' : 'agent', text);
-    });
+    this.#client.on('update', (update: unknown) => events.onTranscript(transcriptSnapshot(update)));
   }
 
   get live(): boolean {

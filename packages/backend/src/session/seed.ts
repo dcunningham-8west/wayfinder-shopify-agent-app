@@ -1,13 +1,11 @@
 import type { CallLegId, PageContext, SessionSeed, TargetId } from '@wayfinder/contracts';
-import { SEED_TOKEN_BUDGET } from '@wayfinder/contracts';
+import { SEED_TOKEN_BUDGET, TRANSCRIPT_TAIL_TURNS } from '@wayfinder/contracts';
 import type { Session } from './session-store.js';
 
 /**
  * Section 03. Pure: a Session and a Page Context in, a Seed out. No I/O, which is why this is
  * the cheapest part of the system to test despite being the richest in behaviour.
  */
-
-const VERBATIM_TURNS = 4;
 
 export interface SeedInputs {
   session: Session;
@@ -32,7 +30,7 @@ export function assembleSeed(inputs: SeedInputs): SeedResult {
     call_leg_id: callLegId,
     session_state: session.state,
     referent_set: session.referents,
-    verbatim_tail: session.transcript.slice(-VERBATIM_TURNS),
+    verbatim_tail: session.transcript.slice(-TRANSCRIPT_TAIL_TURNS),
     cart: session.cart,
     page_context: pageContext,
     action_targets: inputs.actionTargets ?? [],

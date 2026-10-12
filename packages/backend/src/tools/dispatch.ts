@@ -82,7 +82,13 @@ async function dispatchAction(
 
   // The real outcome of a navigate lands in the next leg's Seed, which has to know we caused
   // it — otherwise the agent re-greets a shopper it just moved.
-  if (outcome.status === 'ok' && (name === 'navigate' || name === 'open_product')) {
+  const causesNavigation =
+    action.data.action === 'navigate' ||
+    action.data.action === 'open_product' ||
+    action.data.action === 'apply_filter' ||
+    action.data.action === 'sort' ||
+    action.data.action === 'submit_form';
+  if (outcome.status === 'ok' && causesNavigation) {
     sessions.markAgentNavigation(call.sessionId);
   }
 

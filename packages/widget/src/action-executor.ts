@@ -1,5 +1,6 @@
 import type { Action, ActionFailure, ActionResult } from '@wayfinder/contracts';
 import { readPageContext } from './page-context.js';
+import { markAgentNavigation } from './session-client.js';
 import { whenAgentFinishesSpeaking } from './speech.js';
 
 /**
@@ -49,13 +50,16 @@ async function cart(path: string, body: unknown): Promise<Outcome> {
 function withParams(mutate: (params: URLSearchParams) => void): Outcome {
   const url = new URL(location.href);
   mutate(url.searchParams);
-  location.assign(url.toString());
+  leaveFor(url.toString());
   return { status: 'ok', acked: true };
 }
 
 /** Ack first, then leave: a request held open across a page unload dies with the page. */
 function leaveFor(href: string): void {
-  void whenAgentFinishesSpeaking().then(() => location.assign(href));
+  void whenAgentFinishesSpeaking().then(() => {
+    markAgentNavigation();
+    location.assign(href);
+  });
 }
 
 export async function executeAction(action: Action): Promise<Outcome> {
@@ -135,7 +139,10 @@ export async function executeAction(action: Action): Promise<Outcome> {
         if (field instanceof HTMLInputElement) field.value = value;
       }
       if (!form.reportValidity()) return failed('validation_failed');
-      form.submit();
+      void whenAgentFinishesSpeaking().then(() => {
+        markAgentNavigation();
+        form.submit();
+      });
       return { status: 'ok' };
     }
 

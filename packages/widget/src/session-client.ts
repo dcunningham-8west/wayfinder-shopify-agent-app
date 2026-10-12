@@ -1,4 +1,9 @@
-import type { PageContext } from '@wayfinder/contracts';
+import {
+  TRANSCRIPT_TAIL_TURNS,
+  TranscriptHandoff,
+  type PageContext,
+  type TranscriptTurn,
+} from '@wayfinder/contracts';
 import type { WidgetConfig } from './config.js';
 
 /**
@@ -7,6 +12,8 @@ import type { WidgetConfig } from './config.js';
  */
 
 const STORAGE_KEY = 'wayfinder:session';
+const AGENT_NAVIGATION_KEY = 'wayfinder:agent-navigation';
+const AGENT_NAVIGATION_TTL_MS = 30_000;
 
 export interface SessionHandle {
   id: string;
@@ -34,6 +41,26 @@ function remembered(): SessionHandle | undefined {
   }
 }
 
+export function markAgentNavigation(): void {
+  try {
+    sessionStorage.setItem(AGENT_NAVIGATION_KEY, String(Date.now()));
+  } catch {
+    // Without sessionStorage the Session cannot survive the page load either.
+  }
+}
+
+export function takeAgentNavigationMarker(): boolean {
+  try {
+    const raw = sessionStorage.getItem(AGENT_NAVIGATION_KEY);
+    sessionStorage.removeItem(AGENT_NAVIGATION_KEY);
+    const markedAt = Number(raw);
+    const age = Date.now() - markedAt;
+    return Number.isFinite(markedAt) && age >= 0 && age <= AGENT_NAVIGATION_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
 export class SessionClient {
   #handle = remembered();
 
@@ -41,6 +68,45 @@ export class SessionClient {
 
   get handle(): SessionHandle | undefined {
     return this.#handle;
+  }
+
+  async shouldReconnect(): Promise<boolean> {
+    const handle = this.#handle;
+    if (!handle) return false;
+
+    const response = await fetch(`${this.config.backendUrl}/sessions/${handle.id}/reconnect`, {
+      headers: { 'x-wayfinder-session-token': handle.token },
+    });
+    if (response.status === 404) return true;
+    if (!response.ok) throw new Error(`reconnect check failed: ${response.status}`);
+
+    const body = (await response.json()) as { reconnect?: unknown };
+    return body.reconnect === true;
+  }
+
+  handoff(transcript: TranscriptTurn[]): boolean {
+    const handle = this.#handle;
+    if (!handle) return false;
+
+    const recentTranscript = transcript.slice(-TRANSCRIPT_TAIL_TURNS).map((turn) => ({
+      ...turn,
+      text: turn.text.slice(-2000),
+    }));
+    const payload = TranscriptHandoff.safeParse({
+      session_token: handle.token,
+      transcript: recentTranscript,
+    });
+    if (!payload.success) return false;
+
+    const blob = new Blob([JSON.stringify(payload.data)], { type: 'text/plain' });
+    try {
+      return navigator.sendBeacon(
+        `${this.config.backendUrl}/sessions/${handle.id}/handoff`,
+        blob,
+      );
+    } catch {
+      return false;
+    }
   }
 
   /** `sessionStorage`, not `localStorage`: a Session is a visit, not an identity. */

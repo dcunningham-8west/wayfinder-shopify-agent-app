@@ -7,6 +7,7 @@ import type {
   ReferentSet,
   SessionId,
   SessionState,
+  TranscriptTurn,
 } from '@wayfinder/contracts';
 import { MAX_SESSIONS_IN_MEMORY, REFERENT_SET_CAPACITY, TIMING } from '@wayfinder/contracts';
 
@@ -15,21 +16,17 @@ import { MAX_SESSIONS_IN_MEMORY, REFERENT_SET_CAPACITY, TIMING } from '@wayfinde
  * object with an idle TTL, and losing one is a defined state rather than an error.
  */
 
-export interface Turn {
-  role: 'agent' | 'shopper';
-  text: string;
-}
-
 export interface Session {
   id: SessionId;
   /** Never logged, never in the Seed. Distinct from the id, which is public by design. */
   token: string;
   state: SessionState;
   referents: ReferentSet;
-  transcript: Turn[];
+  transcript: TranscriptTurn[];
   cart: CartSnapshot;
   pageContext?: PageContext;
   agentCausedNavigation: boolean;
+  agentReconnectPending: boolean;
   legCount: number;
   lastLegCreatedAt?: number;
   lastSeenAt: number;
@@ -50,6 +47,7 @@ export class SessionStore {
       transcript: [],
       cart: { count: 0, lines: [] },
       agentCausedNavigation: false,
+      agentReconnectPending: false,
       legCount: 0,
       lastSeenAt: this.now(),
     };
@@ -95,7 +93,21 @@ export class SessionStore {
   /** Set by the agent's own navigate, read by the next leg's Seed so it does not re-greet. */
   markAgentNavigation(id: SessionId): void {
     const session = this.#sessions.get(id);
-    if (session) session.agentCausedNavigation = true;
+    if (session) {
+      session.agentCausedNavigation = true;
+      session.agentReconnectPending = true;
+    }
+  }
+
+  takeAgentReconnect(session: Session): boolean {
+    const pending = session.agentReconnectPending;
+    session.agentReconnectPending = false;
+    return pending;
+  }
+
+  appendTranscript(session: Session, turns: TranscriptTurn[]): void {
+    session.transcript.push(...turns);
+    session.lastSeenAt = this.now();
   }
 
   /** Enforced here, not on the socket: sockets are cheap, Call Legs cost money. */
