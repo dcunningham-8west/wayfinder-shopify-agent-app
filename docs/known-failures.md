@@ -180,7 +180,7 @@ Confirmed fixed on a clean load. The agent reaches the product page.
 
 - **Found:** 2026-10-10
 - **Class:** prompt, and architecture
-- **Status:** fixed, unverified
+- **Status:** first fix failed verification; refixed, unverified
 - **Caused by:** the KF-001 guardrail. This is a regression we wrote.
 
 ### Observed
@@ -235,3 +235,16 @@ fixes need the same "what else does this touch?" as code.
 
 **Deferring work until speech ends is a widget responsibility, not a prompt one.** No wording
 could have fixed the cut-off.
+
+### Follow-up: the first fix cut the agent off anyway
+
+The gate worked; it was listening to the wrong thing. **Retell streams speech in chunks**, so
+`agent_stop_talking` fires in the gaps *between sentences* as well as at the end of a turn —
+visible in every transcript in this file ("I'm " / "looking now."). The widget waited for the
+first stop, which arrived mid-turn, and left during the gap.
+
+Now the gate requires **sustained quiet**: after speech stops it waits `900 ms` to see whether
+the agent resumes, and only leaves if it does not. Caps at 12 s overall.
+
+**Lesson: "stopped talking" and "finished speaking" are different events,** and a streaming TTS
+only gives you the first one.

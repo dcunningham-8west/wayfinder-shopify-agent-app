@@ -12,28 +12,43 @@ export function setAgentTalking(value: boolean): void {
   for (const listener of [...listeners]) listener();
 }
 
-function once(predicate: () => boolean, timeoutMs: number): Promise<void> {
-  if (predicate()) return Promise.resolve();
+/** Resolves true if the predicate held before the timeout, false if it timed out. */
+function within(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
+  if (predicate()) return Promise.resolve(true);
   return new Promise((resolve) => {
-    const finish = (): void => {
+    const finish = (held: boolean): void => {
       listeners.delete(listener);
       clearTimeout(timer);
-      resolve();
+      resolve(held);
     };
     const listener = (): void => {
-      if (predicate()) finish();
+      if (predicate()) finish(true);
     };
-    const timer = setTimeout(finish, timeoutMs);
+    const timer = setTimeout(() => finish(false), timeoutMs);
     listeners.add(listener);
   });
 }
 
 /** The agent is told to speak after an Action, so the reply may not have started yet. */
-const WAIT_FOR_SPEECH_MS = 1_500;
+const WAIT_FOR_SPEECH_MS = 2_000;
+/**
+ * Retell streams speech in chunks, so `agent_stop_talking` fires between sentences as well as
+ * at the end of a turn. Only quiet that lasts counts as finished.
+ */
+const SUSTAINED_QUIET_MS = 900;
 /** Caps the wait when the agent says nothing, or says a great deal. */
-const MAX_UTTERANCE_MS = 6_000;
+const MAX_TOTAL_MS = 12_000;
 
 export async function whenAgentFinishesSpeaking(): Promise<void> {
-  await once(() => talking, WAIT_FOR_SPEECH_MS);
-  if (talking) await once(() => !talking, MAX_UTTERANCE_MS);
+  const deadline = Date.now() + MAX_TOTAL_MS;
+
+  await within(() => talking, WAIT_FOR_SPEECH_MS);
+
+  while (Date.now() < deadline) {
+    if (talking) {
+      await within(() => !talking, deadline - Date.now());
+      continue;
+    }
+    if (!(await within(() => talking, SUSTAINED_QUIET_MS))) return;
+  }
 }
