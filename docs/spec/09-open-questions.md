@@ -129,6 +129,7 @@ Constraints already fixed:
 - Starting point, not a blank page: [`agent-app.css`](../wayfinder/prototypes/010-widget-css/agent-app.css),
   vendored from the prior v3 widget. Keep or rework.
 - Open within: how the panel appears, cycles, and dismisses — the behaviour of `show_in_widget`.
+  **Decided in the build:** see [section 06](./06-tools-and-actions.md#the-preview-panel).
 
 ### C2. Agent persona and prompt content
 

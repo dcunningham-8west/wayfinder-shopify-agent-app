@@ -14,7 +14,9 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   search_catalogue:
     'Find products in the store. Call this whenever the shopper describes what they want, ' +
     'however vaguely. Never answer from memory and never invent a product; if match_quality ' +
-    'is "none", say so and offer the alternative returned.',
+    'is "none", say so and offer the alternative returned. When preview is "shown", the ' +
+    'results are already on the shopper\'s screen as tiles in the widget, and the tile for ' +
+    'each product lights up as you say its name — so name each product you describe.',
   get_live_facts:
     'Get current price and availability for one product the shopper has already been shown. ' +
     'Call this before stating any price or saying something is in stock. Never use it to search.',

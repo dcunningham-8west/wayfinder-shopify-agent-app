@@ -4,6 +4,7 @@ import {
   GetLiveFactsArgs,
   SearchCatalogueArgs,
   ToolName,
+  type ProductId,
   type SessionId,
 } from '@wayfinder/contracts';
 import type { SafeParseReturnType } from 'zod';
@@ -35,7 +36,7 @@ export type ToolOutcome =
 
 export async function dispatchToolCall(call: ToolCall, deps: ToolDeps): Promise<ToolOutcome> {
   const tool = ToolName.safeParse(call.name);
-  if (tool.success) return dispatchTool(tool.data, call.args, deps.catalogue);
+  if (tool.success) return dispatchTool(tool.data, call, deps);
 
   const action = ActionName.safeParse(call.name);
   if (action.success) return dispatchAction(action.data, call, deps);
@@ -43,23 +44,43 @@ export async function dispatchToolCall(call: ToolCall, deps: ToolDeps): Promise<
   return { ok: false, error: 'unknown_tool', detail: call.name };
 }
 
-async function dispatchTool(
-  name: ToolName,
-  rawArgs: unknown,
-  catalogue: Catalogue,
-): Promise<ToolOutcome> {
+/** Bounds what showing tiles can add to a search turn; a slow page costs the panel, not speech. */
+const PREVIEW_TIMEOUT_MS = 1_500;
+
+async function dispatchTool(name: ToolName, call: ToolCall, deps: ToolDeps): Promise<ToolOutcome> {
   switch (name) {
     case 'search_catalogue': {
-      const args = SearchCatalogueArgs.safeParse(rawArgs);
+      const args = SearchCatalogueArgs.safeParse(call.args);
       if (!args.success) return invalidArguments(args);
-      return { ok: true, result: await catalogue.search(args.data) };
+      const result = await deps.catalogue.search(args.data);
+      const shown = result.results.length > 0 ? result.results : (result.alternatives ?? []);
+      const preview = await showPreview(call.sessionId, shown.map((m) => m.product_id), deps);
+      return { ok: true, result: { ...result, preview } };
     }
     case 'get_live_facts': {
-      const args = GetLiveFactsArgs.safeParse(rawArgs);
+      const args = GetLiveFactsArgs.safeParse(call.args);
       if (!args.success) return invalidArguments(args);
-      return { ok: true, result: await catalogue.liveFacts(args.data) };
+      return { ok: true, result: await deps.catalogue.liveFacts(args.data) };
     }
   }
+}
+
+/** The backend shows results itself, so the panel never depends on the agent remembering to. */
+async function showPreview(
+  sessionId: SessionId | undefined,
+  productIds: ProductId[],
+  { actions, catalogue }: ToolDeps,
+): Promise<'shown' | 'not_shown'> {
+  if (!sessionId || productIds.length === 0 || !actions.isConnected(sessionId)) return 'not_shown';
+  const tiles = catalogue.previewTiles(productIds);
+  if (tiles.length === 0) return 'not_shown';
+
+  const outcome = await actions.perform(
+    sessionId,
+    { action: 'show_in_widget', product_ids: tiles.map((t) => t.product_id), tiles },
+    PREVIEW_TIMEOUT_MS,
+  );
+  return outcome.status === 'ok' ? 'shown' : 'not_shown';
 }
 
 async function dispatchAction(

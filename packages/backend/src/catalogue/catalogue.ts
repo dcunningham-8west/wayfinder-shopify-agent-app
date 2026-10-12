@@ -1,6 +1,7 @@
 import type {
   GetLiveFactsArgs,
   GetLiveFactsResult,
+  PreviewTile,
   SearchCatalogueArgs,
   SearchCatalogueResult,
 } from '@wayfinder/contracts';
@@ -15,4 +16,6 @@ export interface Catalogue {
   liveFacts(args: GetLiveFactsArgs): Promise<GetLiveFactsResult>;
   /** Where a product lives on the storefront, so opening one does not depend on the page. */
   urlFor(productId: string): string | undefined;
+  /** Tiles for the Preview Panel, in the order given; unknown ids are dropped. */
+  previewTiles(productIds: readonly string[]): PreviewTile[];
 }

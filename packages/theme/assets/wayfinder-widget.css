@@ -739,6 +739,12 @@
   min-width: 130px;
   background: #f3f4f6;
 }
+.nav-voice-container .preview-panel .product-preview-card__image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .nav-voice-container .preview-panel .product-preview-card__body {
   display: flex;
   flex: 1;

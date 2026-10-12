@@ -53,7 +53,11 @@ export class ActionChannel {
    * Resolves with a failure rather than rejecting: every outcome here is something the agent
    * has to say out loud, and an exception is not speakable.
    */
-  async perform(sessionId: SessionId, action: Action): Promise<ActionOutcome> {
+  async perform(
+    sessionId: SessionId,
+    action: Action,
+    timeoutMs = ACTION_TIMEOUT_MS,
+  ): Promise<ActionOutcome> {
     const socket = this.#sockets.get(sessionId);
     if (!socket) return failure('unknown', 'the page is not connected');
 
@@ -69,7 +73,7 @@ export class ActionChannel {
       const timer = setTimeout(() => {
         this.#pending.delete(envelope.envelope_id);
         resolve(failure('timeout'));
-      }, ACTION_TIMEOUT_MS);
+      }, timeoutMs);
 
       this.#pending.set(envelope.envelope_id, { resolve, timer });
       try {

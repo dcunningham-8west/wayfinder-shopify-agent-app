@@ -21,6 +21,7 @@ const PRODUCTS_QUERY = `
         handle
         title
         tags
+        featuredImage { url(transform: { maxWidth: 600 }) }
         variants(first: 20) {
           nodes {
             id
@@ -38,6 +39,7 @@ interface ShopifyProductNode {
   handle: string;
   title: string;
   tags: string[];
+  featuredImage?: { url: string } | null;
   variants: { nodes: { id: string; title: string; availableForSale: boolean; price: string }[] };
 }
 
@@ -116,6 +118,7 @@ function toCatalogueProduct(node: ShopifyProductNode, currency: string): Catalog
     facets: parseFacets(node.tags),
     variants,
     min_price_minor: Math.min(...variants.map((v) => v.price.amount_minor)),
+    image_url: node.featuredImage?.url,
   };
 }
 

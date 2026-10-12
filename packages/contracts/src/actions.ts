@@ -9,6 +9,19 @@ import { PageContext } from './page-context.js';
  * leave the model guessing what is allowed.
  */
 
+/** Identity-level only: a way *to* the storefront. Price is the Index's, shown but never spoken. */
+export const PreviewTile = z
+  .object({
+    product_id: ProductId,
+    title: z.string().min(1),
+    url: z.string().startsWith('/'),
+    image_url: z.string().url().startsWith('https://').optional(),
+    price: Money.optional(),
+    price_varies: z.boolean(),
+  })
+  .strict();
+export type PreviewTile = z.infer<typeof PreviewTile>;
+
 export const Action = z.discriminatedUnion('action', [
   z.object({ action: z.literal('navigate'), url: z.string().min(1) }),
   z.object({
@@ -48,7 +61,12 @@ export const Action = z.discriminatedUnion('action', [
     fields: z.record(z.string(), z.string()),
   }),
   // Identity-level only: a way *to* the storefront, never a replacement for it.
-  z.object({ action: z.literal('show_in_widget'), product_ids: z.array(ProductId).min(1).max(5) }),
+  z.object({
+    action: z.literal('show_in_widget'),
+    product_ids: z.array(ProductId).min(1).max(5),
+    /** Filled by the backend from the Catalogue; the agent only ever names ids. */
+    tiles: z.array(PreviewTile).max(5).optional(),
+  }),
 ]);
 export type Action = z.infer<typeof Action>;
 

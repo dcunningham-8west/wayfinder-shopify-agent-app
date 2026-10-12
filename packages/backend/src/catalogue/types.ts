@@ -17,6 +17,7 @@ export interface CatalogueProduct {
   facets: Partial<Record<Facet, string[]>>;
   variants: CatalogueVariant[];
   min_price_minor: number;
+  image_url?: string;
 }
 
 /**

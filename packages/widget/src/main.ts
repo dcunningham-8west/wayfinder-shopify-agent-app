@@ -1,10 +1,11 @@
 import { ActionSocket } from './action-socket.js';
 import { loadConfig } from './config.js';
 import { observePageContext, readPageContext } from './page-context.js';
+import { mountPreviewPanel } from './preview-panel.js';
 import { SessionClient, takeAgentNavigationMarker } from './session-client.js';
 import { setAgentTalking } from './speech.js';
 import { mountUi } from './ui.js';
-import { TIMING, type TranscriptTurn } from '@wayfinder/contracts';
+import { TIMING, type PreviewTile, type TranscriptTurn } from '@wayfinder/contracts';
 import type { VoiceClient } from './voice.js';
 
 const REFUSALS: Record<string, string> = {
@@ -26,6 +27,7 @@ function boot(): void {
 
   const config = loadConfig();
   const ui = mountUi(root);
+  const preview = mountPreviewPanel(root);
   const sessions = new SessionClient(config);
   const socket = new ActionSocket(config);
 
@@ -44,6 +46,7 @@ function boot(): void {
       },
       onEnded: () => {
         ui.setLive(false);
+        preview?.hide();
         socket.close();
       },
       onAgentTalking: (talking) => {
@@ -57,6 +60,7 @@ function boot(): void {
         const lastTurn = transcript.at(-1);
         if (lastTurn) {
           ui.setTranscript(lastTurn.role === 'agent' ? 'Assistant' : 'You', lastTurn.text);
+          if (lastTurn.role === 'agent') preview?.follow(lastTurn.text);
         }
       },
     });
@@ -149,6 +153,11 @@ function boot(): void {
   // The first interaction after a silent reconnect is the gesture autoplay was waiting for.
   document.addEventListener('pointerdown', unlockAudio, true);
   document.addEventListener('keydown', unlockAudio, true);
+
+  document.addEventListener('wayfinder:show-products', (event) => {
+    const tiles = (event as CustomEvent<PreviewTile[]>).detail;
+    if (preview?.show(tiles)) event.preventDefault();
+  });
 
   ui.onStart(() => void start());
   ui.onEnd(() => voice?.stop());

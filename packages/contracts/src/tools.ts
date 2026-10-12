@@ -48,6 +48,8 @@ export const SearchCatalogueResult = z
      * alternative, rather than silently broadening the search.
      */
     alternatives: z.array(CatalogueMatch).max(2).optional(),
+    /** Set by the backend after pushing results to the Preview Panel; the agent's only evidence it did. */
+    preview: z.enum(['shown', 'not_shown']).optional(),
   })
   .strict();
 export type SearchCatalogueResult = z.infer<typeof SearchCatalogueResult>;

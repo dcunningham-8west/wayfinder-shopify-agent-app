@@ -153,10 +153,12 @@ export async function executeAction(action: Action): Promise<Outcome> {
       return { status: 'ok' };
     }
 
-    case 'show_in_widget':
-      document.dispatchEvent(
-        new CustomEvent('wayfinder:show-products', { detail: action.product_ids }),
+    case 'show_in_widget': {
+      // The panel cancels the event once it has rendered; an unhandled event must not read as ok.
+      const shown = !document.dispatchEvent(
+        new CustomEvent('wayfinder:show-products', { detail: action.tiles ?? [], cancelable: true }),
       );
-      return { status: 'ok' };
+      return shown ? { status: 'ok' } : failed('unavailable', 'preview panel not shown');
+    }
   }
 }

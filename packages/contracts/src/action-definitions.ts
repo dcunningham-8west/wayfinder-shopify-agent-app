@@ -44,11 +44,11 @@ export function actionSchema(name: ActionName) {
  */
 export const SERVER_FILLED: Partial<Record<ActionName, readonly string[]>> = {
   open_product: ['url'],
+  show_in_widget: ['tiles'],
 };
 
 /**
- * In the vocabulary but not yet offered to the agent: the Preview Panel does not exist, so
- * `show_in_widget` succeeds silently and the agent narrates a panel the shopper cannot see.
- * Delete the entry when the panel ships.
+ * In the vocabulary but not offered to the agent. The backend shows search results in the
+ * Preview Panel itself, so the panel never depends on the model remembering to (KF-001).
  */
 export const UNOFFERED_ACTIONS: ReadonlySet<ActionName> = new Set(['show_in_widget']);

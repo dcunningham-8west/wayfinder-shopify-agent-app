@@ -161,6 +161,21 @@ One constraint is fixed now so the deferred design cannot go wrong:
 
 One source of visual truth.
 
+### Behaviour (decided in the build)
+
+- **The backend opens it, not the agent.** Every `search_catalogue` pushes its results (or its
+  `alternatives` on `none`) as `show_in_widget` with server-filled `tiles`. The search result
+  carries `preview: "shown" | "not_shown"` — the agent's only evidence the panel is up.
+  `show_in_widget` stays out of the agent's tool set: a panel that depends on the model
+  remembering to call it fails the way [KF-001](../known-failures.md) did.
+- **Bounded cost.** The push waits at most 1.5 s; a slow or absent page costs the panel, never
+  the search answer.
+- **Cycling follows speech.** The tile whose distinctive title words the agent most recently
+  spoke becomes active; previously active tiles dim. Words shared by every tile ("gift set")
+  cannot select one.
+- **Dismissed** by its close button, Escape, the call ending, or the next search replacing it.
+- **Honest outcome.** The widget reports `ok` only if the panel actually rendered.
+
 ## Confirmation
 
 > **Confirm when the agent proposes. Execute when the shopper asks.**

@@ -3,6 +3,7 @@ import type {
   GetLiveFactsArgs,
   GetLiveFactsResult,
   MatchQuality,
+  PreviewTile,
   SearchCatalogueArgs,
   SearchCatalogueResult,
 } from '@wayfinder/contracts';
@@ -35,6 +36,13 @@ export class CatalogueIndex implements Catalogue {
 
   urlFor(productId: string): string | undefined {
     return this.#products.find((p) => p.product_id === productId)?.url;
+  }
+
+  previewTiles(productIds: readonly string[]): PreviewTile[] {
+    return productIds.flatMap((id) => {
+      const product = this.#products.find((p) => p.product_id === id);
+      return product ? [toTile(product)] : [];
+    });
   }
 
   async search(args: SearchCatalogueArgs): Promise<SearchCatalogueResult> {
@@ -97,5 +105,18 @@ function toMatch(product: CatalogueProduct): CatalogueMatch {
     url: product.url,
     scent: product.facets.scent?.[0],
     format: product.facets.maincat?.[0],
+  };
+}
+
+function toTile(product: CatalogueProduct): PreviewTile {
+  const currency = product.variants[0]?.price.currency;
+  const prices = new Set(product.variants.map((v) => v.price.amount_minor));
+  return {
+    product_id: product.product_id,
+    title: product.title,
+    url: product.url,
+    ...(product.image_url ? { image_url: product.image_url } : {}),
+    ...(currency ? { price: { amount_minor: product.min_price_minor, currency } } : {}),
+    price_varies: prices.size > 1,
   };
 }
