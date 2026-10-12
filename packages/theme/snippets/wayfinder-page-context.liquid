@@ -11,8 +11,8 @@
     "template": {{ template.name | json }}
     {%- if template.name == 'product' -%}
       ,"subject": {
-        "product_id": {{ product.id | json }},
-        "variant_id": {{ product.selected_or_first_available_variant.id | json }},
+        "product_id": "gid://shopify/Product/{{ product.id }}",
+        "variant_id": "gid://shopify/ProductVariant/{{ product.selected_or_first_available_variant.id }}",
         "handle": {{ product.handle | json }},
         "title": {{ product.title | json }},
         "url": {{ product.url | json }},

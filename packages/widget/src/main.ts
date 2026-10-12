@@ -75,6 +75,7 @@ function boot(): void {
     starting = true;
     const pageContext = readPageContext();
     if (!pageContext) {
+      warn('start aborted: no valid page context');
       ui.setStatus('UNAVAILABLE');
       starting = false;
       return undefined;

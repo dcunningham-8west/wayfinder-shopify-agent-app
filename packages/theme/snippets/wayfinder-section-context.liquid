@@ -19,7 +19,7 @@
     "products": [
       {%- for wayfinder_product in wayfinder_products -%}
         {
-          "product_id": {{ wayfinder_product.id | json }},
+          "product_id": "gid://shopify/Product/{{ wayfinder_product.id }}",
           "handle": {{ wayfinder_product.handle | json }},
           "title": {{ wayfinder_product.title | json }},
           "url": {{ wayfinder_product.url | json }},

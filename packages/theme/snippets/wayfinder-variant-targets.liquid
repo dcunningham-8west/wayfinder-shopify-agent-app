@@ -9,7 +9,7 @@
 <div hidden data-wayfinder-variant-targets>
   {%- for variant in product.variants -%}
     <span
-      data-agent-action='{{ variant.id }}'
+      data-agent-action='gid://shopify/ProductVariant/{{ variant.id }}'
       data-wayfinder-options='{{ variant.options | join: '~~' | escape }}'
     ></span>
   {%- endfor -%}

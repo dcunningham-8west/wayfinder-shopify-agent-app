@@ -38,7 +38,11 @@ export function readPageContext(): PageContext | undefined {
   const candidate = { ...(base as object), url: location.pathname, epoch, sections };
 
   const result = PageContext.safeParse(candidate);
-  return result.success ? result.data : undefined;
+  if (!result.success) {
+    console.warn('[wayfinder] invalid page context', result.error.issues);
+    return undefined;
+  }
+  return result.data;
 }
 
 /**

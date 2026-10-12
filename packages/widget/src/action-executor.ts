@@ -13,6 +13,11 @@ type Outcome = ActionResult['outcome'];
 
 const CART_HEADERS = { 'content-type': 'application/json', accept: 'application/json' };
 
+/** The Ajax Cart API and `?variant=` take numeric ids; the contract carries GIDs. */
+function numericId(gid: string): string {
+  return gid.slice(gid.lastIndexOf('/') + 1);
+}
+
 function failed(reason: ActionFailure['reason'], message?: string): ActionFailure {
   return { status: 'error', reason, ...(message ? { message } : {}) };
 }
@@ -74,7 +79,7 @@ export async function executeAction(action: Action): Promise<Outcome> {
       const href = action.url ?? findTarget(action.product_id)?.getAttribute('href');
       if (!href) return notFound();
       const target = new URL(href, location.origin);
-      if (action.variant_id) target.searchParams.set('variant', action.variant_id);
+      if (action.variant_id) target.searchParams.set('variant', numericId(action.variant_id));
       leaveFor(target.toString());
       return { status: 'ok', acked: true };
     }
@@ -108,7 +113,9 @@ export async function executeAction(action: Action): Promise<Outcome> {
     }
 
     case 'add_to_cart':
-      return cart('/cart/add.js', { items: [{ id: action.variant_id, quantity: action.qty }] });
+      return cart('/cart/add.js', {
+        items: [{ id: numericId(action.variant_id), quantity: action.qty }],
+      });
 
     case 'update_cart_line':
       return cart('/cart/change.js', { id: action.line_key, quantity: action.qty });
