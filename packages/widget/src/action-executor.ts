@@ -11,6 +11,12 @@ import { whenAgentFinishesSpeaking } from './speech.js';
 
 type Outcome = ActionResult['outcome'];
 
+interface CartView extends HTMLElement {
+  getSectionsToRender(): { id: string }[];
+  renderContents(state: unknown): void;
+  setActiveElement?(element: Element | null): void;
+}
+
 const CART_HEADERS = { 'content-type': 'application/json', accept: 'application/json' };
 
 /** The Ajax Cart API and `?variant=` take numeric ids; the contract carries GIDs. */
@@ -34,21 +40,31 @@ function notFound(): ActionFailure {
 }
 
 async function cart(path: string, body: unknown): Promise<Outcome> {
+  const cartView = document.querySelector<CartView>('cart-notification') ??
+    document.querySelector<CartView>('cart-drawer');
+  const sections = cartView?.getSectionsToRender().map(({ id }) => id);
+  const requestBody = sections?.length
+    ? { ...(body as Record<string, unknown>), sections, sections_url: location.pathname }
+    : body;
+
+  cartView?.setActiveElement?.(document.activeElement);
   const response = await fetch(path, {
     method: 'POST',
     headers: CART_HEADERS,
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   });
   if (!response.ok) {
     const detail = (await response.json().catch(() => ({}))) as { description?: string };
     return failed('cart_rejected', detail.description);
   }
 
+  const result = (await response.json()) as { status?: number; description?: string };
+  if (result.status) return failed('cart_rejected', result.description);
+  cartView?.renderContents(result);
+
   const state = (await fetch('/cart.js', { headers: CART_HEADERS }).then((r) => r.json())) as {
     item_count: number;
   };
-  // The drawer is the theme's business; tell it something happened and let it re-render.
-  document.dispatchEvent(new CustomEvent('wayfinder:cart-updated'));
   return { status: 'ok', cart_count: state.item_count };
 }
 
