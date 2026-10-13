@@ -32,6 +32,13 @@ export function registerSessionRoutes(
     return { reconnect: sessions.takeAgentReconnect(session) };
   });
 
+  app.delete('/sessions/:id', async (request, reply) => {
+    const session = authorise(request, sessions);
+    if (!session) return reply.code(404).send({ error: 'unknown_session' });
+    sessions.end(session);
+    return reply.code(204).send();
+  });
+
   app.post('/sessions/:id/call-legs', async (request, reply) => {
     const session = authorise(request, sessions);
     if (!session) {

@@ -31,6 +31,7 @@ export async function buildServer(config = loadConfig()) {
   // The widget runs on the storefront origin, the backend on Render; nothing else needs in.
   await app.register(cors, {
     origin: [`https://${config.shopifyStoreDomain}`, ...config.allowedOrigins],
+    methods: ['GET', 'POST', 'DELETE'],
     allowedHeaders: ['content-type', 'x-wayfinder-session-token'],
   });
 

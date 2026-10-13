@@ -155,7 +155,12 @@ function boot(): void {
   });
 
   ui.onStart(() => void start());
-  ui.onEnd(() => voice?.stop());
+  ui.onEnd(() => {
+    voice?.stop();
+    socket.close();
+    preview?.hide();
+    void sessions.end().catch((error: unknown) => warn('session end failed', error));
+  });
 
   // Standby costs nothing: a facet change updates the copy the next Seed will carry.
   observePageContext((pageContext) => {

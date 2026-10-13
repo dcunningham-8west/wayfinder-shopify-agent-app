@@ -7,14 +7,15 @@ these words in code, prompts, tickets, and conversation.
 
 A single shopper's conversation with the assistant, **scoped to a browser tab** and owned by
 the backend. It survives navigation and owns a series of Call Legs. It ends on tab close or
-idle timeout, and does not persist across days.
+idle timeout, or when the shopper explicitly ends the conversation. Refresh and navigation
+do not end it; it does not persist across days.
 
 Not the same as a Retell call, and not the same as a Shopify cart.
 
 ## Call Leg
 
-One RetellAI web call within a Session. A page navigation ends the current leg and the
-widget opens the next one. Legs are the technical unit; the Session is the conversational
+One RetellAI web call within a Session. A page navigation ends the current leg; a new leg
+opens only on a wake trigger. Legs are the technical unit; the Session is the conversational
 unit the shopper perceives.
 
 A leg is the **exception, not the rule** — see Standby.

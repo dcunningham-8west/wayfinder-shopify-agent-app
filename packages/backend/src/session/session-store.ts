@@ -109,6 +109,10 @@ export class SessionStore {
     return pending;
   }
 
+  end(session: Session): void {
+    if (this.#sessions.get(session.id) === session) this.#sessions.delete(session.id);
+  }
+
   /** Replaces the current leg's turns; false for a leg that has since been superseded. */
   setLegTranscript(session: Session, legId: CallLegId, turns: TranscriptTurn[]): boolean {
     if (session.currentLegId !== legId) return false;

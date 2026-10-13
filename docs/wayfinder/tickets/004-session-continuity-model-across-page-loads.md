@@ -96,6 +96,14 @@ shopper starts fresh. Accepted explicitly: the conversation is not shopper-scope
 not persist across days, which keeps conversation history out of long-lived pseudonymous
 storage.
 
+### Explicit end (clarified 2026-10-13)
+
+The shopper's **End conversation** control ends the Session, not only its current Call Leg.
+The widget stops the leg, clears its stored Session handle, and requests immediate backend
+deletion of the Session and its conversation state. A later start creates a fresh Session.
+Refresh and shopper navigation do not imply an explicit end; agent-caused navigation keeps
+the existing continuity behavior.
+
 The **cart** is the thing that persists, keyed by Shopify's cart token, so a returning
 shopper finds their cart intact while the agent genuinely starts fresh.
 

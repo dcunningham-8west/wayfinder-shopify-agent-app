@@ -155,4 +155,19 @@ export class SessionClient {
       // Nothing to do; the next create will overwrite it.
     }
   }
+
+  async end(): Promise<void> {
+    const handle = this.#handle;
+    this.forget();
+    if (!handle) return;
+
+    const response = await fetch(`${this.config.backendUrl}/sessions/${handle.id}`, {
+      method: 'DELETE',
+      headers: { 'x-wayfinder-session-token': handle.token },
+      keepalive: true,
+    });
+    if (!response.ok && response.status !== 404) {
+      throw new Error(`session end failed: ${response.status}`);
+    }
+  }
 }

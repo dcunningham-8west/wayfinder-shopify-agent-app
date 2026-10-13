@@ -151,3 +151,10 @@ chosen to stay below Retell's prompt surcharge cliff.
 
 The seam argument that justified backend ownership is unchanged and is what made this
 tunable without a storefront release.
+
+## Amendment (2026-10-13)
+
+An explicit shopper **End conversation** action ends the Session, not just the current Call
+Leg. The widget clears its tab-scoped Session handle and requests backend deletion of the
+Session state. A later start is fresh. Refresh and navigation remain continuity-preserving;
+in particular, agent-caused navigation continues to reconnect as designed.

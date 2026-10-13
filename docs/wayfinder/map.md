@@ -83,7 +83,8 @@ decides for itself, constrained but not open. **The map is done; the next move i
   on a Dawn-structured generated theme, which doubles as the prototyping surface.
 - [Session continuity model across page loads](./tickets/004-session-continuity-model-across-page-loads.md):
   **reconnect-with-replay, server-seeded** — a tab-scoped Session owns a series of Call
-  Legs; the backend owns the transcript (beaconed on `pagehide`) and the browser carries
+  Legs; an explicit End conversation deletes that Session while refresh and agent-caused
+  navigation preserve continuity; the backend owns the transcript and the browser carries
   only a session id; silent resume depends on the per-origin mic grant, so the widget must
   be same-origin; a Cart Snapshot seeds each leg for talking but never for mutating; the
   gap is masked by a text status. SPA-style navigation suppression rejected.

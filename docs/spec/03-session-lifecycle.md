@@ -63,6 +63,12 @@ expire after **30 min idle**, the process caps at **1,000 Sessions**, and a sess
 backend no longer recognises **silently starts a fresh Session** rather than erroring. A
 deploy therefore costs a shopper their history, not their call.
 
+Clicking **End conversation** ends the Session immediately: the widget stops the live leg,
+clears the Session handle from `sessionStorage`, and asks the backend to delete the Session
+and its in-memory conversation state. A later start creates a fresh Session. Refreshing the
+page or navigating as part of the conversation does not end the Session; agent-caused
+navigation retains its existing reconnect behavior.
+
 ## Handoff
 
 The backend follows each Call Leg's live transcript itself, over Retell's call-monitor
