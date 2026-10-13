@@ -1,5 +1,6 @@
 import type {
   CatalogueMatch,
+  Facet,
   GetLiveFactsArgs,
   GetLiveFactsResult,
   MatchQuality,
@@ -12,6 +13,15 @@ import { hasFacetValues } from './facets.js';
 import type { CatalogueProduct, RankedProduct, Ranker } from './types.js';
 
 const MAX_RESULTS = 5;
+const MAX_DIGEST_CHARACTERS = 1000;
+const DIGEST_FACETS: readonly [Facet, string][] = [
+  ['maincat', 'Categories'],
+  ['subcat', 'Subcategories'],
+  ['mood', 'Moods'],
+  ['style', 'Styles'],
+  ['fragrance', 'Fragrances'],
+  ['scent', 'Scents'],
+];
 
 /**
  * Tier 2, in memory over the whole catalogue. Being in memory is what rules out serverless
@@ -32,6 +42,28 @@ export class CatalogueIndex implements Catalogue {
 
   get size(): number {
     return this.#products.length;
+  }
+
+  digest(): string {
+    if (this.#products.length === 0) return 'No products are currently available.';
+
+    const digest = `${this.#products.length} products in the catalogue.`;
+    const summaries = DIGEST_FACETS.flatMap(([facet, label]) => {
+      const values = new Map<string, string>();
+      for (const product of this.#products) {
+        for (const value of product.facets[facet] ?? []) {
+          const normalized = value.toLowerCase();
+          if (!values.has(normalized)) values.set(normalized, value);
+        }
+      }
+      const sorted = [...values.values()].sort((left, right) => left.localeCompare(right));
+      return sorted.length > 0 ? [`${label}: ${sorted.join(', ')}.`] : [];
+    });
+
+    return summaries.reduce((result, summary) => {
+      if (result.length + summary.length + 1 > MAX_DIGEST_CHARACTERS) return result;
+      return `${result} ${summary}`;
+    }, digest);
   }
 
   urlFor(productId: string): string | undefined {

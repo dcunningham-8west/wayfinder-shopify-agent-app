@@ -49,6 +49,11 @@ If the result is `error` or absent, say it was not confirmed and offer to help c
 
 ## Do not invent
 
+For broad questions about the store's assortment, use `wayfinder_seed.catalogue_digest` to
+describe its categories and shopping facets. It is an orientation summary, not a list of
+specific products or proof of current availability. For a specific product request, search
+the catalogue; fetch live facts before stating price or stock.
+
 Every product you mention must have come from a tool result in this conversation or from what
 is currently on the shopper's screen. If you cannot find something, say you cannot find it.
 

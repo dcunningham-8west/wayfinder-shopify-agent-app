@@ -23,7 +23,7 @@ approximate.
 
 | Tier | Answers | Cost | Freshness |
 | --- | --- | --- | --- |
-| **Catalogue Digest** | "What sort of things do you sell?" | **No tool call** — it is in the Seed | Rebuilt per Session |
+| **Catalogue Digest** | "What sort of things do you sell?" | **No tool call** — it is in the Seed | Built per Call Leg from the current Index |
 | **Catalogue Index** | "Show me something woody" | One tool call, in-memory | Rebuilt on webhook |
 | **Live facts** | "How much is that one?" | One tool call, live API | Real time |
 
@@ -32,12 +32,14 @@ least volatile, so they cost nothing.
 
 ### Tier 1 — Catalogue Digest
 
-A compact orientation summary injected into the Session Seed. **No prices, no stock levels.**
+A compact orientation summary built from the current in-memory Index and injected into each
+Call Leg's Session Seed. It contains the indexed product count and unique values from the
+supported facets. **No product-by-product list, prices, or stock levels.**
 
 That omission is deliberate: a stale price is a confidently wrong answer about the fact
 shoppers care most about. Shape is stable; prices are not.
 
-Budget: **~300 tokens**. First component shed if the Seed exceeds 4,000
+Budget: **~250 tokens** (capped at 1,000 characters). First component shed if the Seed exceeds 4,000
 ([section 03](./03-session-lifecycle.md)).
 
 ### Tier 2 — Catalogue Index

@@ -10,6 +10,7 @@ test('call-leg creation carries declared form targets and Shopify result into th
   let createdSeed;
   registerSessionRoutes(app, {
     sessions,
+    catalogue: { digest: () => '2 products. Categories: candles.' },
     voice: {
       async createWebCall(seed) {
         createdSeed = seed;
@@ -45,6 +46,7 @@ test('call-leg creation carries declared form targets and Shopify result into th
       total: { amount_minor: 12000, currency: 'GBP' },
       lines: [{ line_key: 'line-key', title: 'Lime Basil candle', qty: 2 }],
     });
+    assert.equal(createdSeed.catalogue_digest, '2 products. Categories: candles.');
   } finally {
     await app.close();
   }
@@ -53,7 +55,7 @@ test('call-leg creation carries declared form targets and Shopify result into th
 test('call-leg creation rejects malformed form metadata', async () => {
   const app = Fastify({ logger: false });
   const sessions = new SessionStore();
-  registerSessionRoutes(app, { sessions });
+  registerSessionRoutes(app, { sessions, catalogue: { digest: () => '' } });
 
   try {
     const created = await app.inject({ method: 'POST', url: '/sessions', payload: {} });
@@ -78,7 +80,7 @@ test('call-leg creation rejects malformed form metadata', async () => {
 test('call-leg creation rejects a missing cart snapshot', async () => {
   const app = Fastify({ logger: false });
   const sessions = new SessionStore();
-  registerSessionRoutes(app, { sessions });
+  registerSessionRoutes(app, { sessions, catalogue: { digest: () => '' } });
 
   try {
     const created = await app.inject({ method: 'POST', url: '/sessions', payload: {} });

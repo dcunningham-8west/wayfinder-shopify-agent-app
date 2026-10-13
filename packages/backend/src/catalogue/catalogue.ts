@@ -12,6 +12,8 @@ import type {
  * webhook be tested without either.
  */
 export interface Catalogue {
+  /** Compact, current orientation for the agent; no prices or stock. */
+  digest(): string;
   search(args: SearchCatalogueArgs): Promise<SearchCatalogueResult>;
   liveFacts(args: GetLiveFactsArgs): Promise<GetLiveFactsResult>;
   /** Where a product lives on the storefront, so opening one does not depend on the page. */

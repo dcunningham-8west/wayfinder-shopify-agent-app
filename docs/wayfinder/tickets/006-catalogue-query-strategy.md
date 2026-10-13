@@ -58,16 +58,18 @@ is what makes volatile data cheap (see Tier 3).
 
 ### Tier 1 — Catalogue Digest, in the Session Seed
 
-A compact orientation summary (~300 tokens): collections, product types, tags, rough
-counts. Assembled by the backend, injected into the Session Seed alongside transcript replay
-and Page Context ([ADR-0001](../../adr/0001-reconnect-with-replay-voice-continuity.md)).
+A compact orientation summary (~250 tokens): indexed product count plus unique values from
+the supported catalogue facets. Built from the current in-memory Index for each Call Leg and
+injected into the Session Seed alongside transcript replay and Page Context
+([ADR-0001](../../adr/0001-reconnect-with-replay-voice-continuity.md)).
 
 Answers "do you sell candles?" and "what sorts of things do you have?" **with no tool call
 at all** — zero network hops inside the voice turn. This is a direct fix for the recorded v1
 failure, not a mitigation of it.
 
-**Carries no prices and no stock levels.** A stale price band is a confidently wrong answer
-about the one fact shoppers care most about. Identity and shape only.
+**Carries no product-by-product list, prices, or stock levels.** A stale price band is a
+confidently wrong answer about the one fact shoppers care most about. It provides assortment
+shape only; specific products come from search, and volatile facts come from live lookup.
 
 Rejected alternative: a **full** digest of all 100 products (~3,000 tokens), which would
 remove the search tool entirely. Rejected on cost — a Call Leg starts on every navigation,

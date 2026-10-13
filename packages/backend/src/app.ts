@@ -45,6 +45,7 @@ export async function buildServer(config = loadConfig()) {
 
   registerSessionRoutes(app, {
     sessions,
+    catalogue,
     voice: config.retellAgentId
       ? new RetellVoiceProvider(config.retellApiKey, config.retellAgentId)
       : undefined,
