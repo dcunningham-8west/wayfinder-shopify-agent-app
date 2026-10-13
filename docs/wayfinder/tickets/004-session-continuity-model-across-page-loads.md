@@ -38,7 +38,8 @@ reconnect sequence written out step by step.
 
 A **Session** is a tab-scoped conversation that owns a series of **Call Legs**. Navigation
 ends a leg and the widget opens the next one; the Session is what makes the legs feel like
-one conversation. The backend owns the Session; the browser carries only its id.
+one conversation. The backend owns the Session; the browser persists its id and Session Token.
+The widget reads cart state from Shopify per Call Leg rather than persisting it with the Session.
 
 Named parts are in [the Glossary](../../Glossary.md): Session, Call Leg, Handoff,
 Session Seed, Cart Snapshot.
@@ -104,26 +105,30 @@ deletion of the Session and its conversation state. A later start creates a fres
 Refresh and shopper navigation do not imply an explicit end; agent-caused navigation keeps
 the existing continuity behavior.
 
-The **cart** is the thing that persists, keyed by Shopify's cart token, so a returning
-shopper finds their cart intact while the agent genuinely starts fresh.
+The **cart** is independent of the voice Session. The shopper's browser keeps its Shopify cart
+cookie across refresh; ending the conversation deletes only backend conversation state. A
+fresh Session reads that same cart from the storefront rather than merging or restoring a
+cart owned by the previous Session.
 
 ### Cart Snapshot: conversational, never authoritative
 
-The backend fetches the cart at call-leg start and injects a **Cart Snapshot** into the
-seed, so the agent opens each leg knowing what is in the cart without spending a tool call
-inside a turn. Because a leg starts on every navigation, snapshot staleness is bounded to a
-single page view.
+Immediately before each Call Leg, the widget fetches the current cart from the locale-aware
+Ajax Cart API in the storefront page and sends a **Cart Snapshot** with the call-leg request.
+The backend validates and injects it into the Seed, so the agent opens each leg knowing what
+is in the cart without spending a tool call inside a turn. The backend cannot fetch this cart
+itself because the browser's cart cookie does not accompany backend requests. A fresh read per
+leg also covers a refreshed page and a newly-created voice Session.
 
 The rule that must hold:
 
 - **Talking** about the cart — use the snapshot. No tool call, no in-turn latency.
-- **Changing** the cart — read the live cart, merge, then write. Never compute a mutation
-  from the snapshot.
+- **Changing** the cart - send the Action to Shopify's live Ajax Cart API in the browser.
+  Never compute a mutation from the snapshot. Shopify applies its documented add-line
+  semantics; there is no separate voice-Session cart to merge.
 
-The snapshot is not a replica (consistent with the map's read-through-and-merge note); it is
-a hint with a known expiry. The failure mode to prompt against is the agent narrating a
-stale snapshot as fact: state contents freely, but re-read if the shopper disputes them or
-asks for a change. Cart write mechanics belong to
+The snapshot is the current browser cart projected into the Seed, not a replica owned by the
+voice Session. The agent may state its contents, but must not use it as the basis for a
+mutation. Cart write mechanics belong to
 [ticket 007](./007-storefront-action-vocabulary-and-dom-boundary.md).
 
 ### The reconnect gap
@@ -146,13 +151,12 @@ best answered against a real widget UI. Moved to the map's fog.
 3. On `pagehide`: `sendBeacon` the transcript snapshot plus navigation intent to the backend
    under the session id; `stopCall()`. The leg ends.
 4. Browser unloads. Document, JS context, and peer connection are destroyed.
-5. New page loads; widget reads the session id from `sessionStorage`.
-6. Widget posts `{ sessionId, pageUrl, pageTitle }` to call-creation and shows
-   "Reconnecting…".
-7. Backend loads the Session, applies replay policy to the transcript, fetches the cart for
-   a fresh Cart Snapshot, and assembles the Session Seed — including whether the agent
-   itself caused this navigation, so it can speak to the page it opened rather than
-   re-orienting.
+5. New page loads; widget reads the Session handle from `sessionStorage`.
+6. Widget reads the current Shopify cart from the browser's Ajax Cart API and sends it with
+   the page context to call-leg creation; it shows "Reconnecting…".
+7. Backend validates the Cart Snapshot, loads the Session, applies replay policy to the
+   transcript, and assembles the Seed - including whether the agent itself caused this
+   navigation, so it can speak to the page it opened rather than re-orienting.
 8. Backend creates the Retell web call with the seed and returns an access token.
 9. Widget calls `startCall`. Mic permission is already granted for the origin, so audio
    resumes with no gesture.

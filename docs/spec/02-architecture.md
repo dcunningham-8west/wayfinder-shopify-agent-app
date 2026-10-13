@@ -93,6 +93,10 @@ agent → Retell → backend → WebSocket → widget → DOM / Ajax Cart API
                               Action Result → backend → agent
 ```
 
+Before every Call Leg, the widget reads the shopper's current cart from the locale-aware
+Ajax Cart API and sends a typed snapshot with the Call Leg request. The backend cannot read
+the browser's cart cookie; it validates the snapshot and puts it in the Session Seed.
+
 The Action path exists because Retell resolves tool calls **server-side only** — the browser
 can observe them but never answer them
 ([ticket 001](../wayfinder/tickets/001-retellai-web-call-capability-surface.md)). The

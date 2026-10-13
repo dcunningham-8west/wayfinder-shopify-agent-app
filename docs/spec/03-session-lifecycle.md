@@ -54,8 +54,10 @@ CTA, and **audio never leaves the page while in Standby**. This is not always-li
 | Replay Policy | |
 | Idle and inter-leg timers | |
 
-The browser carries **only a session id**. It never holds the transcript. This is what makes
-Replay Policy changeable without a storefront release.
+The browser persists only the Session handle; it never holds the transcript or caches cart
+state. Before each Call Leg it reads the current cart from Shopify in the page and sends a
+small snapshot with the request. This keeps the snapshot tied to the shopper's existing
+browser cart while Replay Policy remains changeable without a storefront release.
 
 The backend holds all of it **in process memory only** — no database
 ([ticket 014](../wayfinder/tickets/014-transcript-retention-and-data-residency.md)). Sessions
@@ -92,7 +94,7 @@ Assembled server-side and injected into every new Call Leg. Contents:
 | Session State | Derived facts: products discussed, stated preferences, pending action, promises made | Oldest first, 2nd |
 | Referent Set | What "that one" and "the second one" currently mean ([section 11](./11-disambiguation.md)) | **Never** |
 | Last ~4 turns verbatim | Conversational texture so the agent resumes mid-thought | Trim first |
-| Cart Snapshot | Talking about the cart | **Never** |
+| Cart Snapshot | Talking about the cart; read from the browser's live Shopify cart for this leg | **Never** |
 | Page Context | What is on screen | **Never** |
 | Action Target registry | What can be acted on | **Never** |
 | Form submission result | Whether Shopify accepted a just-submitted Contact form | **Never** |
@@ -121,12 +123,16 @@ is worse than being vague.
 
 ## The Cart Snapshot rule
 
-The Cart Snapshot is valid for **talking** about the cart and **never** for computing a
-mutation.
+The widget reads Shopify's current cart from the locale-aware Ajax Cart API immediately
+before every Call Leg request and sends the projected Cart Snapshot to the backend. The
+backend validates it and uses it only for talking about the cart. The browser's Shopify cart
+cookie selects the same anonymous cart the theme drawer displays; the voice Session does not
+own or persist a cart.
 
-Every cart write reads the live cart, merges, then writes — in the browser, via the Ajax Cart
-API. The Snapshot may be seconds stale; the shopper may have changed the cart in another tab.
-Computing a mutation from it would silently destroy their changes.
+Cart mutations are sent to Shopify's live Ajax Cart endpoints from the browser. Never
+calculate a mutation from the Seed snapshot: it can be stale if the shopper changed the cart
+in another tab. Shopify's `add.js` applies its own matching-line quantity semantics; the
+agent does not merge separate Session carts.
 
 ## Known constraints
 

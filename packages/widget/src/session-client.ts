@@ -1,4 +1,4 @@
-import type { FormSubmissionResult, PageContext, TargetId } from '@wayfinder/contracts';
+import type { CartSnapshot, FormSubmissionResult, PageContext, TargetId } from '@wayfinder/contracts';
 import type { WidgetConfig } from './config.js';
 
 /**
@@ -111,6 +111,7 @@ export class SessionClient {
    */
   async startCallLeg(
     pageContext: PageContext,
+    cart: CartSnapshot,
     actionTargets: TargetId[] = [],
     formResults: FormSubmissionResult[] = [],
     retried = false,
@@ -123,14 +124,19 @@ export class SessionClient {
         'content-type': 'application/json',
         'x-wayfinder-session-token': handle.token,
       },
-      body: JSON.stringify({ page_context: pageContext, action_targets: actionTargets, form_results: formResults }),
+      body: JSON.stringify({
+        page_context: pageContext,
+        action_targets: actionTargets,
+        form_results: formResults,
+        cart,
+      }),
     });
 
     if (response.status === 404) {
       this.forget();
       // Still inside the click, so the retry keeps the gesture the microphone needs.
       if (retried) return 'unknown_session';
-      return this.startCallLeg(pageContext, actionTargets, formResults, true);
+      return this.startCallLeg(pageContext, cart, actionTargets, formResults, true);
     }
     if (response.status === 429) return 'rate_limited';
     if (response.status === 503) return 'voice_not_configured';

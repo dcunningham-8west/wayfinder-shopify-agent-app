@@ -117,8 +117,13 @@ resolves to nothing).
 The Session Seed is assembled **server-side** and injected per Call Leg
 ([section 03](./03-session-lifecycle.md)).
 
-Server-side assembly is what lets Replay Policy change without a storefront release — the
-browser carries only a session id and never holds the transcript.
+Server-side assembly is what lets Replay Policy change without a storefront release. The
+browser persists the Session handle, never the transcript or a cached cart; before each Call
+Leg the widget reads the current browser cart and sends its snapshot with the request.
+
+The `wayfinder_seed.cart` field is the agent's source for questions about cart contents. The
+prompt directs the agent to describe its lines and quantities and never to compute cart
+mutations from that snapshot ([guardrails](../../packages/retell/prompts/30-guardrails.md)).
 
 The Seed reaches the prompt as three dynamic variables: `wayfinder_continuity`
 (`first_call` / `resumed` / `resumed_after_your_navigation`), which the `continuity` file

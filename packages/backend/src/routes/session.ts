@@ -1,5 +1,6 @@
 import {
   ActionTargetIds,
+  CartSnapshot,
   FormSubmissionResults,
   PageContext,
   type SessionId,
@@ -59,13 +60,16 @@ export function registerSessionRoutes(
       page_context?: unknown;
       action_targets?: unknown;
       form_results?: unknown;
+      cart?: unknown;
     };
     const pageContext = PageContext.safeParse(body?.page_context);
     const actionTargets = ActionTargetIds.safeParse(body?.action_targets ?? []);
     const formResults = FormSubmissionResults.safeParse(body?.form_results ?? []);
+    const cart = CartSnapshot.safeParse(body?.cart);
     if (!actionTargets.success || !formResults.success) {
       return reply.code(400).send({ error: 'invalid_form_context' });
     }
+    if (!cart.success) return reply.code(400).send({ error: 'invalid_cart_snapshot' });
     if (pageContext.success) sessions.setPageContext(session, pageContext.data);
     if (!session.pageContext) {
       return reply.code(400).send({ error: 'page_context_required' });
@@ -78,6 +82,7 @@ export function registerSessionRoutes(
       session,
       callLegId,
       pageContext: session.pageContext,
+      cart: cart.data,
       actionTargets: actionTargets.data,
       formResults: formResults.data,
     });

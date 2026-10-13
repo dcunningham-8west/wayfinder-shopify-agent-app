@@ -37,15 +37,18 @@ Legs** — one RetellAI web call each. Navigation ends a leg; the widget opens t
   _(Superseded 2026-10-12: SDK v3 no longer delivers the transcript to the browser. The backend
   reads it from Retell's call-monitor socket instead; see
   [spec section 03](../spec/03-session-lifecycle.md#handoff).)_
-- The browser carries **only the session id**, in `sessionStorage`.
-- The backend assembles the **Session Seed** for each new leg: replayed transcript, a
-  **Cart Snapshot**, the current page, and whether the agent caused the navigation.
+- The browser persists the Session handle in `sessionStorage`, never the transcript or a
+  cached cart. The widget reads the live cart from Shopify before each Call Leg.
+- The widget reads the current browser cart before each leg and sends a **Cart Snapshot**
+  with the request; the backend validates it and assembles the **Session Seed** with the
+  replayed transcript, current page, and whether the agent caused the navigation.
 - The agent opens each leg with a short bridging line and never mentions transcripts,
   sessions, or reconnection.
 - The reconnect gap is masked by a visible text status in the widget.
 
-Session lifetime is **tab-scoped**: tab close or idle timeout ends it. The Shopify cart,
-keyed by its cart token, is the thing that persists.
+Session lifetime is **tab-scoped**: tab close or idle timeout ends it. The Shopify cart
+remains in the browser's anonymous storefront session, independently of the voice Session.
+Ending the conversation does not clear it; a new Call Leg reads it again from the storefront.
 
 ## Alternatives considered
 
@@ -108,9 +111,10 @@ latency. A spun-down free tier turns a one-second gap into a conversation-breaki
 
 ### The Cart Snapshot is a hint, not a replica
 
-Each leg is seeded with cart contents so the agent can discuss the cart without a tool call
-inside a turn, with staleness bounded to one page view. Mutations must still read the live
-cart, merge, then write — the cart can change via the theme UI or another tab.
+Each leg is seeded with a fresh browser-read cart snapshot so the agent can discuss the cart
+without a tool call inside a turn. The snapshot is context only; cart Actions go to Shopify's
+live Ajax Cart API and never derive changes from the snapshot. The cart can change via the
+theme UI or another tab.
 
 ### Replay policy is deliberately unresolved
 

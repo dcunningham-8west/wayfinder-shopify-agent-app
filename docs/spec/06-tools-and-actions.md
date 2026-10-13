@@ -101,12 +101,16 @@ This table is what the `contracts` package holds.
 
 ### Notes on specific actions
 
-**Cart writes run in the browser**, through the Ajax Cart API. The cart cookie and the
-theme's cart-drawer re-render both live in the page; writing server-side via the cart token
-means reimplementing both. Cart mutation is just another Action, not a special backend path.
+**Cart reads and writes run in the browser**, through the locale-aware Ajax Cart API. Before
+each Call Leg, the widget reads `/cart.js` and sends the validated Cart Snapshot to the
+backend for the Seed. The same-origin request carries the shopper's cart cookie; the backend
+does not fetch or own that cart. Cart mutation is just another Action, not a special backend
+path.
 
-The Cart Snapshot remains **never valid for computing a mutation**
-([section 03](./03-session-lifecycle.md)).
+Shopify applies `add.js` to the existing cart and merges matching lines according to its
+documented semantics. `update_cart_line` targets the current line key. Neither action
+computes its mutation from the Cart Snapshot, which remains **never valid for computing a
+mutation** ([section 03](./03-session-lifecycle.md)).
 
 **`apply_filter` and `sort` are implemented as URL construction**, not by clicking facet
 controls — Dawn drives both through query parameters and the Section Rendering API. The agent

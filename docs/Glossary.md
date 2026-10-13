@@ -64,9 +64,10 @@ Cart Snapshot are never shed.
 
 ## Cart Snapshot
 
-A read-only view of the shopper's Shopify cart, injected into the Session Seed at the start
-of each Call Leg. Valid for **talking** about the cart; never valid for computing a
-mutation. Not a replica — cart writes always read the live cart, merge, then write.
+A read-only projection of the shopper's existing anonymous Shopify cart. Immediately before
+each Call Leg, the widget reads the cart through the same-origin Ajax Cart API and sends this
+snapshot to the backend for the Session Seed. Valid for **talking** about the cart; never used
+to calculate a mutation. It is not owned by or persisted with the voice Session.
 
 ## Page Context
 

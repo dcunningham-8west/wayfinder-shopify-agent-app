@@ -1,4 +1,5 @@
 import { ActionSocket } from './action-socket.js';
+import { readCartSnapshot } from './cart-snapshot.js';
 import { loadConfig } from './config.js';
 import {
   clearFormResults,
@@ -90,9 +91,12 @@ function boot(): void {
     ui.setStatus(reconnecting ? 'RECONNECTING' : 'CONNECTING');
     try {
       const formResults = readFormResults();
+      const cartPromise = readCartSnapshot();
+      const clientPromise = loadVoice();
+      const cart = await cartPromise;
       const [client, leg] = await Promise.all([
-        loadVoice(),
-        sessions.startCallLeg(pageContext, readActionTargets(), formResults),
+        clientPromise,
+        sessions.startCallLeg(pageContext, cart, readActionTargets(), formResults),
       ]);
       if (typeof leg === 'string') {
         warn('call leg refused', leg);

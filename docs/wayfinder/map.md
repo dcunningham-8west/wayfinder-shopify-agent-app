@@ -57,8 +57,9 @@ decides for itself, constrained but not open. **The map is done; the next move i
   `packages/theme`._
 - Call does **not** survive navigation: the widget reconnects per page and resumes from
   the RetellAI transcript. Prototyped by the operator and confirmed working.
-- One cart only — Shopify's, keyed by the browser cart token. The agent read-throughs it
-  and merges; it never keeps a replica or a session-scoped cart.
+- One cart only: Shopify's anonymous browser cart, independent of the voice Session. Each
+  Call Leg gets a fresh snapshot read by the widget from the storefront; cart Actions apply
+  to Shopify's live cart, never to a session-scoped replica.
 - Monorepo, with RetellAI config, Shopify extension, and backend service as packages.
   _(Revised by ticket 008: **one repo, five packages**, the theme among them — which required
   disconnecting the Shopify GitHub integration. "Extension" is also the wrong word now; the
@@ -84,10 +85,10 @@ decides for itself, constrained but not open. **The map is done; the next move i
 - [Session continuity model across page loads](./tickets/004-session-continuity-model-across-page-loads.md):
   **reconnect-with-replay, server-seeded** — a tab-scoped Session owns a series of Call
   Legs; an explicit End conversation deletes that Session while refresh and agent-caused
-  navigation preserve continuity; the backend owns the transcript and the browser carries
-  only a session id; silent resume depends on the per-origin mic grant, so the widget must
-  be same-origin; a Cart Snapshot seeds each leg for talking but never for mutating; the
-  gap is masked by a text status. SPA-style navigation suppression rejected.
+  navigation preserve continuity; the backend owns the transcript and the browser persists
+  its Session handle; each leg gets a fresh browser-read Cart Snapshot for talking, never
+  mutating; silent resume depends on the per-origin mic grant, so the widget must be
+  same-origin; the gap is masked by a text status. SPA-style navigation suppression rejected.
   Recorded as [ADR-0001](../adr/0001-reconnect-with-replay-voice-continuity.md).
 - [Page context extraction strategy](./tickets/005-page-context-extraction-strategy.md):
   **the page supplies identity, the catalogue supplies facts** — a typed Page Context

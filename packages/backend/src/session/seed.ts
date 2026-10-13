@@ -1,5 +1,6 @@
 import type {
   CallLegId,
+  CartSnapshot,
   FormSubmissionResult,
   PageContext,
   SessionSeed,
@@ -17,6 +18,7 @@ export interface SeedInputs {
   session: Session;
   callLegId: CallLegId;
   pageContext: PageContext;
+  cart: CartSnapshot;
   actionTargets?: TargetId[];
   formResults?: FormSubmissionResult[];
   catalogueDigest?: string;
@@ -38,7 +40,7 @@ export function assembleSeed(inputs: SeedInputs): SeedResult {
     session_state: session.state,
     referent_set: session.referents,
     verbatim_tail: session.transcript.slice(-TRANSCRIPT_TAIL_TURNS),
-    cart: session.cart,
+    cart: inputs.cart,
     page_context: pageContext,
     action_targets: inputs.actionTargets ?? [],
     form_results: inputs.formResults ?? [],

@@ -1,7 +1,6 @@
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import type {
   CallLegId,
-  CartSnapshot,
   PageContext,
   PageContextProduct,
   ReferentSet,
@@ -23,7 +22,6 @@ export interface Session {
   state: SessionState;
   referents: ReferentSet;
   transcript: TranscriptTurn[];
-  cart: CartSnapshot;
   pageContext?: PageContext;
   agentCausedNavigation: boolean;
   agentReconnectPending: boolean;
@@ -48,7 +46,6 @@ export class SessionStore {
       state: { products_discussed: [], stated_preferences: [], promises_made: [] },
       referents: [],
       transcript: [],
-      cart: { count: 0, lines: [] },
       agentCausedNavigation: false,
       agentReconnectPending: false,
       legCount: 0,

@@ -71,7 +71,7 @@ judged from the code rather than from recorded failures.
 | Layered prompts + CI `llm.update` sync | **Port the shape, rewrite the code** | Pipeline shape is right; implementation is a trivial concatenate-and-push against SDK v3. Layering rebuilt (below). |
 | `tools/functions.json` as a hand-authored artifact | **Redesign** | Ticket 008 makes `contracts` generate it. |
 | 9-tool vocabulary | **Redesign** | Eight are already re-cut by tickets 006/007; the ninth is cut outright (below). |
-| `sessionStorage` handoff (`8west:agent-handoff`) | **Redesign** | Ticket 004: backend owns the transcript, browser carries only a session id. The surviving *idea* — fresh call seeded with prior transcript — is already ADR-0001. |
+| `sessionStorage` handoff (`8west:agent-handoff`) | **Redesign** | Ticket 004: backend owns the transcript; the browser persists its Session handle and reads the current cart from Shopify for each Call Leg. The surviving *idea* — fresh call seeded with prior transcript — is already ADR-0001. |
 | SSE `/api/events` | **Redesign** | Ticket 007 chose a per-leg WebSocket; Action Results need a return path SSE cannot give. |
 | `*-session.js` (~1 kb, all three gens) | **Delete** | Ticket 004 deletes the job it does. |
 | `*-retell.js` (23.6 → 10.4 kb across gens) | **Reference** | The shrinkage is the SDK stabilising, not the design improving. Ticket 001 says build on v3 fresh. Keep for gotchas. |

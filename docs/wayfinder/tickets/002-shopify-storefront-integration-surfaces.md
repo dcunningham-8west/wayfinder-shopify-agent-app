@@ -51,9 +51,11 @@ Full findings: [shopify-storefront-integration-surfaces.md](../research/shopify-
    at `/api/ucp/mcp` (free-text query + intent, needs a hosted agent profile). Storefront
    GraphQL remains, tokenless or tokened. Predictive Search is a free, same-origin,
    typo-tolerant lexical option. Whether UCP is semantic is unconfirmed.
-4. **Cart**: the Ajax Cart API owns the shopper's session cart and merges on `add.js`;
-   prefer `Shopify.actions.updateCart` so the theme refreshes its own UI. The Storefront
-   API cart and UCP Cart MCP are *separate* carts — never use them for in-session writes.
+4. **Cart**: the Ajax Cart API owns the shopper's browser cart, supports reading it through
+   locale-aware `GET /cart.js`, and merges matching lines on `add.js`; use it from the page
+   for the current Cart Snapshot and cart Actions. The backend cannot fetch the browser's
+   cart cookie. The Storefront API cart and UCP Cart MCP are *separate* carts; never use
+   them for in-session writes.
 5. **Page metadata**: reliable are `window.Shopify.routes.root`, `Shopify.actions`,
    `shopify-section-*` wrappers, the Section Rendering API, and `shopify-features`.
    `shopify:page:view` is theme-dispatched, so not guaranteed. `meta` / `ShopifyAnalytics`

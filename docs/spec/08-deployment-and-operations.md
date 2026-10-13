@@ -97,8 +97,10 @@ remains the source of truth for **content** (products, collections, pages, menus
 
 ### Shopify Admin API — legacy custom app
 
-Read-only: `read_products`, `read_inventory`. The backend never writes to Shopify; cart writes
-happen in the browser ([section 06](./06-tools-and-actions.md)).
+Read-only: `read_products`, `read_inventory`. The backend does not access the shopper's
+session cart: the browser's Shopify cart cookie is available only to same-origin storefront
+requests. The widget reads the Ajax Cart API and sends a Cart Snapshot with each Call Leg
+request; cart writes also happen in the browser ([section 06](./06-tools-and-actions.md)).
 
 **Created as a legacy custom app, deliberately.** This is a documented debt, so the reasoning
 matters:
