@@ -95,6 +95,7 @@ Assembled server-side and injected into every new Call Leg. Contents:
 | Cart Snapshot | Talking about the cart | **Never** |
 | Page Context | What is on screen | **Never** |
 | Action Target registry | What can be acted on | **Never** |
+| Form submission result | Whether Shopify accepted a just-submitted Contact form | **Never** |
 | Catalogue Digest | Catalogue shape, no tool call needed | Dropped last |
 | Agent-caused-navigation flag | Lets the agent speak naturally about why the page changed | **Never** |
 | Resumed flag | First leg greets; every later leg continues without greeting | **Never** |

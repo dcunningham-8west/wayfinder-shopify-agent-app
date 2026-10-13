@@ -1,0 +1,354 @@
+<!doctype html>
+<!-- PROTOTYPE — THROWAWAY. Contact form interaction; submission is simulated. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wayfinder | Contact form flow prototype</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d3028;
+      --muted: #64746c;
+      --paper: #fbfcf8;
+      --canvas: #edf2ec;
+      --line: #ccd7cf;
+      --green: #225c43;
+      --green-soft: #e0eee4;
+      --coral: #bd563d;
+      --coral-soft: #f8e8e2;
+      --white: #fff;
+      --serif: Georgia, 'Times New Roman', serif;
+      --sans: 'Gill Sans', 'Trebuchet MS', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--canvas);
+      background-image: linear-gradient(135deg, rgb(255 255 255 / 55%) 25%, transparent 25%),
+        linear-gradient(315deg, rgb(255 255 255 / 35%) 25%, transparent 25%);
+      background-size: 28px 28px;
+      font: 16px/1.5 var(--sans);
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 58px;
+      padding: 10px 28px;
+      color: var(--paper);
+      background: var(--ink);
+    }
+    .brand { font-size: 14px; font-weight: 700; }
+    .tag {
+      border: 1px solid #9db4a5;
+      border-radius: 3px;
+      padding: 3px 8px;
+      color: #d5e7da;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    main { width: min(1160px, calc(100% - 40px)); margin: 38px auto 60px; }
+    .intro { max-width: 720px; margin-bottom: 26px; }
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font: 36px/1.1 var(--serif); font-weight: 400; }
+    .intro p { max-width: 66ch; margin-bottom: 0; color: var(--muted); }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 22px; align-items: start; }
+    .form-panel, .side-panel { border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+    .form-panel { padding: 26px clamp(18px, 4vw, 42px) 30px; }
+    .shop-kicker { margin-bottom: 10px; color: var(--coral); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .form-panel h2 { margin-bottom: 7px; font: 27px/1.2 var(--serif); font-weight: 400; }
+    .form-lede { max-width: 50ch; margin-bottom: 22px; color: var(--muted); }
+    .sample {
+      display: grid;
+      grid-template-columns: minmax(0, 110px) minmax(0, 1fr);
+      gap: 4px 12px;
+      border-left: 3px solid var(--green);
+      margin: 0 0 23px;
+      padding: 10px 13px;
+      background: var(--green-soft);
+      font-size: 14px;
+    }
+    .sample dt { color: var(--muted); }
+    .sample dd { margin: 0; overflow-wrap: anywhere; }
+    .sample dt { overflow-wrap: anywhere; }
+    .sample dd:last-child { grid-column: 1 / -1; }
+    .field { margin: 0 0 15px; }
+    label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 700; }
+    input, textarea {
+      display: block;
+      width: 100%;
+      border: 1px solid #9eada3;
+      border-radius: 3px;
+      padding: 10px 11px;
+      color: var(--ink);
+      background: var(--white);
+    }
+    input:focus, textarea:focus { outline: 3px solid #aacbb4; outline-offset: 1px; border-color: var(--green); }
+    textarea { min-height: 114px; resize: vertical; }
+    .field-hint { min-height: 20px; margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .field-hint.error { color: #a33a2d; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+    .button {
+      min-height: 42px;
+      border: 1px solid var(--green);
+      border-radius: 3px;
+      padding: 8px 14px;
+      color: var(--white);
+      background: var(--green);
+      font-weight: 700;
+    }
+    .button:hover:not(:disabled) { background: #174b34; }
+    .button.secondary { color: var(--green); background: transparent; }
+    .button.secondary:hover:not(:disabled) { background: var(--green-soft); }
+    .button.danger { border-color: var(--coral); color: var(--coral); background: transparent; }
+    .button:disabled { cursor: not-allowed; opacity: .46; }
+    .safety-note { margin: 16px 0 0; color: var(--muted); font-size: 13px; }
+    .side-panel { overflow: hidden; }
+    .side-section { padding: 20px; }
+    .side-section + .side-section { border-top: 1px solid var(--line); }
+    h3 { margin-bottom: 10px; font: 20px/1.2 var(--serif); font-weight: 400; }
+    .status-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .status-pill { border-radius: 3px; padding: 4px 8px; background: #e8ece9; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .status-pill.review { background: var(--coral-soft); color: #8f3f2d; }
+    .status-pill.sent { background: var(--green-soft); color: var(--green); }
+    .state-list { display: grid; grid-template-columns: minmax(0, 104px) minmax(0, 1fr); gap: 7px 10px; margin: 12px 0 0; font-size: 14px; }
+    .state-list dt { color: var(--muted); overflow-wrap: anywhere; }
+    .state-list dd { margin: 0; overflow-wrap: anywhere; }
+    .walk-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab {
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 6px 9px;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 13px;
+    }
+    .tab[aria-selected="true"] { border-color: var(--green); color: var(--green); background: var(--green-soft); font-weight: 700; }
+    .walk-description { min-height: 60px; margin-bottom: 12px; color: var(--muted); font-size: 14px; }
+    .walk-step { display: flex; gap: 9px; align-items: baseline; margin: 7px 0; font-size: 14px; }
+    .walk-step .number { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .walk-step.done .number { color: var(--green); }
+    .walk-step.current { color: var(--coral); font-weight: 700; }
+    .walk-controls { margin-top: 12px; }
+    .last-change { min-height: 24px; margin: 12px 0 0; color: var(--coral); font-size: 13px; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 24px, 560px); margin-top: 25px; }
+      .topbar { padding-inline: 12px; flex-wrap: wrap; }
+      h1 { font-size: 31px; }
+      .workspace { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">WAYFINDER <span aria-hidden="true">/</span> CONTACT</div>
+    <span class="tag">Prototype · no message is sent</span>
+  </header>
+  <main>
+    <div class="intro">
+      <h1>Review before sending</h1>
+      <p>Explore a voice assistant preparing a Contact form: details appear in the actual fields, the shopper can correct them, and sending requires a separate confirmation. This prototype never submits data.</p>
+    </div>
+    <div class="workspace">
+      <section class="form-panel" aria-labelledby="contact-title">
+        <div class="shop-kicker">Jo Malone London · Contact</div>
+        <h2 id="contact-title">Send us a message</h2>
+        <p class="form-lede">Share your question with our team. Fields marked required need to be complete before sending.</p>
+        <dl class="sample" aria-label="Details gathered in the conversation">
+          <dt>From the chat</dt><dd>“Could you ask whether my order can arrive before Friday?”</dd>
+          <dt>Shopper gave</dt><dd>Alex Morgan · alex@example.com</dd>
+          <dt>Assistant read back</dt><dd>“I have your name and email, and I’ll ask about delivery before Friday.”</dd>
+        </dl>
+        <form id="contact-form" novalidate>
+          <div class="field">
+            <label for="contact-name">Name</label>
+            <input id="contact-name" name="name" autocomplete="name" value="" aria-describedby="name-hint">
+            <p id="name-hint" class="field-hint">Optional</p>
+          </div>
+          <div class="field">
+            <label for="contact-email">Email <span aria-hidden="true">*</span></label>
+            <input id="contact-email" name="email" type="email" autocomplete="email" required value="" aria-describedby="email-hint">
+            <p id="email-hint" class="field-hint">Required for a reply</p>
+          </div>
+          <div class="field">
+            <label for="contact-phone">Phone</label>
+            <input id="contact-phone" name="phone" type="tel" autocomplete="tel" value="" aria-describedby="phone-hint">
+            <p id="phone-hint" class="field-hint">Optional</p>
+          </div>
+          <div class="field">
+            <label for="contact-message">Message <span aria-hidden="true">*</span></label>
+            <textarea id="contact-message" name="body" required aria-describedby="message-hint"></textarea>
+            <p id="message-hint" class="field-hint">Required</p>
+          </div>
+          <div class="actions">
+            <button class="button secondary" id="prepare" type="button">Fill from conversation</button>
+            <button class="button" id="confirm" type="button" disabled>Confirm and send</button>
+            <button class="button danger" id="clear" type="button">Clear details</button>
+          </div>
+          <p class="safety-note" id="form-status" role="status" aria-live="polite">Nothing has been filled or sent.</p>
+        </form>
+      </section>
+      <aside class="side-panel" aria-label="Interaction state and walkthroughs">
+        <section class="side-section">
+          <div class="status-row">
+            <h3>What the assistant knows</h3>
+            <span id="status-pill" class="status-pill">Collecting details</span>
+          </div>
+          <dl id="state-list" class="state-list"></dl>
+          <p id="last-change" class="last-change" aria-live="polite"></p>
+        </section>
+        <section class="side-section">
+          <h3>Try a walkthrough</h3>
+          <div class="walk-tabs" id="walk-tabs" role="tablist" aria-label="Contact form scenarios"></div>
+          <p id="walk-description" class="walk-description"></p>
+          <div id="walk-steps"></div>
+          <div class="walk-controls">
+            <button class="button secondary" id="next-step" type="button">Run next step</button>
+            <button class="button secondary" id="restart-walk" type="button">Restart</button>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const SAMPLE = {
+      name: 'Alex Morgan',
+      email: 'alex@example.com',
+      phone: '',
+      body: 'Could you let me know whether my order can arrive before Friday?',
+    };
+
+    const scenarios = [
+      {
+        title: 'Review then send',
+        description: 'The assistant fills visible fields, then waits for the shopper to confirm the message before sending.',
+        steps: [
+          { label: 'Fill the visible form', event: { type: 'prepare' } },
+          { label: 'Confirm the message', event: { type: 'confirm' } },
+        ],
+      },
+      {
+        title: 'Correct a detail',
+        description: 'The shopper can edit the populated message before giving the separate send approval.',
+        steps: [
+          { label: 'Fill the visible form', event: { type: 'prepare' } },
+          { label: 'Change the message wording', event: { type: 'edit', field: 'body', value: 'Could you confirm delivery before Friday? The order number is 1042.' } },
+          { label: 'Confirm the corrected message', event: { type: 'confirm' } },
+        ],
+      },
+      {
+        title: 'Required details missing',
+        description: 'If a required field is removed, confirmation is unavailable until the shopper supplies a valid value.',
+        steps: [
+          { label: 'Fill the visible form', event: { type: 'prepare' } },
+          { label: 'Remove the email address', event: { type: 'edit', field: 'email', value: '' } },
+          { label: 'Try to confirm', event: { type: 'confirm' } },
+          { label: 'Restore the email address', event: { type: 'edit', field: 'email', value: SAMPLE.email } },
+          { label: 'Confirm the completed form', event: { type: 'confirm' } },
+        ],
+      },
+    ];
+
+    function initialState() {
+      return { status: 'collecting', fields: { name: '', email: '', phone: '', body: '' }, message: 'Nothing has been filled or sent.', change: '' };
+    }
+
+    function valid(fields) {
+      return fields.email.includes('@') && fields.email.includes('.') && fields.body.trim().length > 0;
+    }
+
+    function transition(state, event) {
+      if (event.type === 'prepare' && state.status !== 'sent') {
+        return { ...state, status: 'review', fields: { ...SAMPLE }, message: 'Details are visible in the form. Review or edit them before sending.', change: 'Assistant populated the visible fields.' };
+      }
+      if (event.type === 'edit' && state.status !== 'sent') {
+        const fields = { ...state.fields, [event.field]: event.value };
+        return { ...state, status: state.status === 'collecting' ? 'review' : state.status, fields, message: valid(fields) ? 'Review the form. Sending still needs your confirmation.' : 'A required field needs attention before this can be sent.', change: `${event.field === 'body' ? 'Message' : event.field[0].toUpperCase() + event.field.slice(1)} updated.` };
+      }
+      if (event.type === 'confirm' && state.status === 'review' && valid(state.fields)) {
+        return { ...state, status: 'sent', message: 'Simulated: the shopper confirmed, and the form was sent.', change: 'Send confirmation received. No network request was made.' };
+      }
+      if (event.type === 'clear') return initialState();
+      return { ...state, change: event.type === 'confirm' ? 'Not sent: complete the required fields first.' : state.change };
+    }
+
+    let state = initialState();
+    let selectedScenario = 0;
+    let stepIndex = 0;
+    const form = document.querySelector('#contact-form');
+    const fields = Object.fromEntries([...form.elements].filter((element) => element.name).map((element) => [element.name, element]));
+
+    function dispatch(event) {
+      state = transition(state, event);
+      render();
+    }
+
+    function render() {
+      for (const [name, input] of Object.entries(fields)) {
+        if (input.value !== state.fields[name]) input.value = state.fields[name];
+      }
+      const validForm = valid(state.fields);
+      document.querySelector('#confirm').disabled = state.status !== 'review' || !validForm;
+      document.querySelector('#form-status').textContent = state.message;
+      const pill = document.querySelector('#status-pill');
+      pill.textContent = ({ collecting: 'Collecting details', review: 'Ready for review', sent: 'Sent · simulated' })[state.status];
+      pill.className = `status-pill${state.status === 'review' ? ' review' : state.status === 'sent' ? ' sent' : ''}`;
+      document.querySelector('#state-list').innerHTML = `
+        <dt>Conversation</dt><dd>${state.status === 'collecting' ? 'Details gathered, not yet placed' : 'Fields populated and visible'}</dd>
+        <dt>Required fields</dt><dd>${validForm ? 'Complete' : 'Incomplete'}</dd>
+        <dt>Shopper approval</dt><dd>${state.status === 'sent' ? 'Received' : 'Still required'}</dd>
+        <dt>External send</dt><dd>${state.status === 'sent' ? 'Simulated only' : 'Not sent'}</dd>`;
+      document.querySelector('#last-change').textContent = state.change;
+      renderWalkthrough();
+    }
+
+    function renderWalkthrough() {
+      document.querySelector('#walk-tabs').innerHTML = scenarios.map((scenario, index) =>
+        `<button class="tab" role="tab" aria-selected="${index === selectedScenario}" data-scenario="${index}">${scenario.title}</button>`
+      ).join('');
+      const scenario = scenarios[selectedScenario];
+      document.querySelector('#walk-description').textContent = scenario.description;
+      document.querySelector('#walk-steps').innerHTML = scenario.steps.map((step, index) => {
+        const status = index < stepIndex ? ' done' : index === stepIndex ? ' current' : '';
+        return `<div class="walk-step${status}"><span class="number">${index < stepIndex ? '✓' : String(index + 1).padStart(2, '0')}</span><span>${step.label}</span></div>`;
+      }).join('');
+      document.querySelector('#next-step').disabled = stepIndex >= scenario.steps.length;
+    }
+
+    document.querySelector('#prepare').addEventListener('click', () => dispatch({ type: 'prepare' }));
+    document.querySelector('#confirm').addEventListener('click', () => dispatch({ type: 'confirm' }));
+    document.querySelector('#clear').addEventListener('click', () => dispatch({ type: 'clear' }));
+    form.addEventListener('input', (event) => {
+      if (event.target.name) dispatch({ type: 'edit', field: event.target.name, value: event.target.value });
+    });
+    document.querySelector('#walk-tabs').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-scenario]');
+      if (!button) return;
+      selectedScenario = Number(button.dataset.scenario);
+      stepIndex = 0;
+      state = initialState();
+      render();
+    });
+    document.querySelector('#next-step').addEventListener('click', () => {
+      const step = scenarios[selectedScenario].steps[stepIndex];
+      if (!step) return;
+      dispatch(step.event);
+      stepIndex += 1;
+      render();
+    });
+    document.querySelector('#restart-walk').addEventListener('click', () => {
+      stepIndex = 0;
+      state = initialState();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

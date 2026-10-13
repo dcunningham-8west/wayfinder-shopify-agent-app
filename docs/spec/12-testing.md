@@ -46,6 +46,7 @@ about on paper, and each maps to a decision that would otherwise regress silentl
 | Filtering in Standby is free | No wake, no billing ([03](./03-session-lifecycle.md)) |
 | Weak and absent matches | `match_quality` behaviours ([11](./11-disambiguation.md)) |
 | Retry does not double-add | Idempotency key ([06](./06-tools-and-actions.md)) |
+| Contact form preparation and submission | Visible fill, explicit approval, and Shopify postback result ([06](./06-tools-and-actions.md#contact-form)) |
 | Seed budget degrades in order | 4,000-token budget and shed order ([03](./03-session-lifecycle.md)) |
 | Deploy mid-session | Unknown session id is a defined state ([08](./08-deployment-and-operations.md)) |
 

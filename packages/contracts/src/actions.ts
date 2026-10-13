@@ -59,6 +59,10 @@ export const Action = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('submit_form'),
     target_id: TargetId,
+  }),
+  z.object({
+    action: z.literal('fill_form'),
+    target_id: TargetId,
     fields: z.record(z.string(), z.string()),
   }),
   // Identity-level only: a way *to* the storefront, never a replacement for it.
@@ -81,6 +85,7 @@ export const ActionName = z.enum([
   'sort',
   'scroll_to',
   'submit_form',
+  'fill_form',
   'show_in_widget',
 ]);
 export type ActionName = z.infer<typeof ActionName>;
@@ -144,7 +149,8 @@ const ResultByAction = {
   apply_filter: ok({ result_count: z.number().int().nonnegative(), page_context: PageContext }),
   sort: ok({ result_count: z.number().int().nonnegative(), page_context: PageContext }),
   scroll_to: ok({}),
-  submit_form: ok({}),
+  submit_form: ok({ submitting: z.literal(true) }),
+  fill_form: ok({ ready: z.literal(true) }),
   show_in_widget: ok({}),
 } as const;
 
@@ -159,6 +165,8 @@ export const ActionResult = z
       ResultByAction.add_to_cart,
       ResultByAction.apply_filter,
       ResultByAction.scroll_to,
+      ResultByAction.fill_form,
+      ResultByAction.submit_form,
       ActionFailure,
     ]),
   })

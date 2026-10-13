@@ -145,6 +145,9 @@ prompt **only**.
 Barge-in, confirmation before cart mutations, error recovery when an Action fails on the page.
 Constrained by C2's `guardrails` and by the Action Result contract.
 
+For the Contact form, the build uses visible preparation followed by a separate explicit
+confirmation before submission; see [section 06](./06-tools-and-actions.md#contact-form).
+
 ### C4. Reconnect failure UX
 
 What the shopper sees and hears when a reconnect fails outright. Deferred from ticket 004

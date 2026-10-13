@@ -102,8 +102,17 @@ allowed. This table is what ticket 008's shared contract package holds.
 | `apply_filter` | `facet`, `values[]` | browser (URL) | result count, fresh Page Context |
 | `sort` | `order` | browser (URL) | result count, fresh Page Context |
 | `scroll_to` | `target_id` | browser (target) | ok / `target_not_found` |
-| `submit_form` | `target_id`, `fields` | browser (target) | ok / validation errors |
+| `fill_form` | `target_id`, `fields` | browser (target) | ready / validation errors |
+| `submit_form` | `target_id` | browser (target) | submission pending |
 | `show_in_widget` | `product_ids[]` | browser (widget) | ok — behaviour deferred |
+
+### Contact form implementation clarification (2026-10-13)
+
+The Contact form uses two Actions rather than one combined fill-and-submit operation.
+`fill_form` visibly prepares the declared controls and validates without submitting;
+`submit_form` is a separate action requiring the shopper's explicit yes. Shopify's postback
+result is carried into the next Session Seed, so a scheduled native submission is not narrated
+as successful before Shopify confirms it. See [spec section 06](../../spec/06-tools-and-actions.md#contact-form).
 
 **Cart writes run in the browser**, through the Ajax Cart API. The cart cookie and the
 theme's cart-drawer re-render both live in the page; writing server-side via the cart token

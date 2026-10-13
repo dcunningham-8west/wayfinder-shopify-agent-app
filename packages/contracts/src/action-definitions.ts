@@ -25,7 +25,10 @@ export const ACTION_DESCRIPTIONS: Record<ActionName, string> = {
     'searching again when they are refining what is already on screen.',
   sort: 'Reorder the products on screen.',
   scroll_to: 'Bring something already on the page into view.',
-  submit_form: 'Fill and submit a form on the page, such as a newsletter signup.',
+  fill_form:
+    'Fill the visible Contact form with details the shopper provided. Use fields name, email, phone, and body. This does not submit the form. After it is ready, ask the shopper whether to send it.',
+  submit_form:
+    'Submit the prepared Contact form. Only call after the shopper explicitly said to send it in the immediately preceding turn. Do not claim success until the next page confirms it.',
   show_in_widget:
     'Show a small panel of products in the voice widget so the shopper can see what you ' +
     'are describing without leaving the page.',

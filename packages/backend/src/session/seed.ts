@@ -1,4 +1,10 @@
-import type { CallLegId, PageContext, SessionSeed, TargetId } from '@wayfinder/contracts';
+import type {
+  CallLegId,
+  FormSubmissionResult,
+  PageContext,
+  SessionSeed,
+  TargetId,
+} from '@wayfinder/contracts';
 import { SEED_TOKEN_BUDGET, TRANSCRIPT_TAIL_TURNS } from '@wayfinder/contracts';
 import type { Session } from './session-store.js';
 
@@ -12,6 +18,7 @@ export interface SeedInputs {
   callLegId: CallLegId;
   pageContext: PageContext;
   actionTargets?: TargetId[];
+  formResults?: FormSubmissionResult[];
   catalogueDigest?: string;
 }
 
@@ -34,6 +41,7 @@ export function assembleSeed(inputs: SeedInputs): SeedResult {
     cart: session.cart,
     page_context: pageContext,
     action_targets: inputs.actionTargets ?? [],
+    form_results: inputs.formResults ?? [],
     catalogue_digest: inputs.catalogueDigest,
     resumed: session.legCount > 1 || session.transcript.length > 0,
     agent_caused_navigation: session.agentCausedNavigation,

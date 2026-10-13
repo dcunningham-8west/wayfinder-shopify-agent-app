@@ -1,4 +1,9 @@
-import { PageContext, type SessionId } from '@wayfinder/contracts';
+import {
+  ActionTargetIds,
+  FormSubmissionResults,
+  PageContext,
+  type SessionId,
+} from '@wayfinder/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { assembleSeed, continuityMode } from '../session/seed.js';
 import type { Session, SessionStore } from '../session/session-store.js';
@@ -50,8 +55,17 @@ export function registerSessionRoutes(
       return reply.code(429).send({ error: 'leg_rate_limited' });
     }
 
-    const body = request.body as { page_context?: unknown };
+    const body = request.body as {
+      page_context?: unknown;
+      action_targets?: unknown;
+      form_results?: unknown;
+    };
     const pageContext = PageContext.safeParse(body?.page_context);
+    const actionTargets = ActionTargetIds.safeParse(body?.action_targets ?? []);
+    const formResults = FormSubmissionResults.safeParse(body?.form_results ?? []);
+    if (!actionTargets.success || !formResults.success) {
+      return reply.code(400).send({ error: 'invalid_form_context' });
+    }
     if (pageContext.success) sessions.setPageContext(session, pageContext.data);
     if (!session.pageContext) {
       return reply.code(400).send({ error: 'page_context_required' });
@@ -64,6 +78,8 @@ export function registerSessionRoutes(
       session,
       callLegId,
       pageContext: session.pageContext,
+      actionTargets: actionTargets.data,
+      formResults: formResults.data,
     });
 
     const call = await voice.createWebCall(seed);

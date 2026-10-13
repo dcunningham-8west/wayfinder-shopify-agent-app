@@ -74,6 +74,9 @@ export const SessionSeed = z
     cart: CartSnapshot,
     page_context: PageContext,
     action_targets: z.array(TargetId).default([]),
+    form_results: z.array(
+      z.object({ target_id: TargetId, status: z.enum(['success', 'error']) }).strict(),
+    ).default([]),
     catalogue_digest: z.string().optional(),
     /** True on every leg after the first; the prompt cannot infer it from the brief's presence. */
     resumed: z.boolean(),
@@ -82,6 +85,17 @@ export const SessionSeed = z
   })
   .strict();
 export type SessionSeed = z.infer<typeof SessionSeed>;
+
+export const ActionTargetIds = z.array(TargetId).max(32);
+export type ActionTargetIds = z.infer<typeof ActionTargetIds>;
+
+export const FormSubmissionResult = z
+  .object({ target_id: TargetId, status: z.enum(['success', 'error']) })
+  .strict();
+export type FormSubmissionResult = z.infer<typeof FormSubmissionResult>;
+
+export const FormSubmissionResults = z.array(FormSubmissionResult).max(32);
+export type FormSubmissionResults = z.infer<typeof FormSubmissionResults>;
 
 /**
  * Not advisory: above this Retell applies a prompt surcharge and the flat per-leg cost model

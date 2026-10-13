@@ -1,4 +1,4 @@
-import type { PageContext } from '@wayfinder/contracts';
+import type { FormSubmissionResult, PageContext, TargetId } from '@wayfinder/contracts';
 import type { WidgetConfig } from './config.js';
 
 /**
@@ -109,7 +109,12 @@ export class SessionClient {
    * A 404 means a deploy wiped the Session. Starting a fresh one silently is the point:
    * the shopper must not have to click to start again.
    */
-  async startCallLeg(pageContext: PageContext, retried = false): Promise<CallLeg | LegRefusal> {
+  async startCallLeg(
+    pageContext: PageContext,
+    actionTargets: TargetId[] = [],
+    formResults: FormSubmissionResult[] = [],
+    retried = false,
+  ): Promise<CallLeg | LegRefusal> {
     const handle = await this.ensure(pageContext);
 
     const response = await fetch(`${this.config.backendUrl}/sessions/${handle.id}/call-legs`, {
@@ -118,14 +123,14 @@ export class SessionClient {
         'content-type': 'application/json',
         'x-wayfinder-session-token': handle.token,
       },
-      body: JSON.stringify({ page_context: pageContext }),
+      body: JSON.stringify({ page_context: pageContext, action_targets: actionTargets, form_results: formResults }),
     });
 
     if (response.status === 404) {
       this.forget();
       // Still inside the click, so the retry keeps the gesture the microphone needs.
       if (retried) return 'unknown_session';
-      return this.startCallLeg(pageContext, true);
+      return this.startCallLeg(pageContext, actionTargets, formResults, true);
     }
     if (response.status === 429) return 'rate_limited';
     if (response.status === 503) return 'voice_not_configured';

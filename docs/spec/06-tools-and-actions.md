@@ -95,7 +95,8 @@ This table is what the `contracts` package holds.
 | `apply_filter` | `facet`, `values[]` | browser (URL) | result count, fresh Page Context |
 | `sort` | `order` | browser (URL) | result count, fresh Page Context |
 | `scroll_to` | `target_id` | browser (target) | ok / `target_not_found` |
-| `submit_form` | `target_id`, `fields` | browser (target) | ok / validation errors |
+| `fill_form` | `target_id`, `fields` | browser (target) | ready / validation errors |
+| `submit_form` | `target_id` | browser (target) | submission pending |
 | `show_in_widget` | `product_ids[]` | browser (widget) | ok — behaviour deferred |
 
 ### Notes on specific actions
@@ -110,6 +111,18 @@ The Cart Snapshot remains **never valid for computing a mutation**
 **`apply_filter` and `sort` are implemented as URL construction**, not by clicking facet
 controls — Dawn drives both through query parameters and the Section Rendering API. The agent
 speaks in facets; the widget builds URLs.
+
+### Contact form
+
+The Contact form is the first declared form target (`contact-form`). Its stable field keys are
+`name`, `email`, `phone`, and `body`; the theme marks exactly which controls may be filled.
+`fill_form` places values in the visible controls and runs browser validation without
+submitting. The agent summarizes the message and asks permission. Only a clear yes permits
+`submit_form`, which uses the native Shopify form submission after the agent finishes speaking.
+
+Shopify returns to the Contact page with a success or error result. The theme emits that
+result into the next Session Seed, so the agent reports success only when Shopify confirms it.
+The form target and result are included only when that form exists on the current page.
 
 **`open_product` does not go through the Action Target registry.** The agent names a
 `product_id`; the backend resolves it to the canonical storefront URL from the Catalogue and

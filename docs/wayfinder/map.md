@@ -110,7 +110,8 @@ decides for itself, constrained but not open. **The map is done; the next move i
   **the agent never touches the DOM** — a Tool answers, an Action acts, and every Action
   runs in the browser. The theme emits an Action Target registry beside the Page Context, so
   the agent names target ids, never selectors; breakage is caught by a build-time check in
-  CI. A ten-action typed vocabulary, carried backend→page as an Action Envelope
+  CI. A typed vocabulary, carried backend→page as an Action Envelope; Contact forms use
+  separate visible-fill and confirmation-gated submit actions.
   over a per-leg WebSocket so the agent speaks real outcomes; `navigate` alone is
   fire-and-forget. Cart writes go through the Ajax Cart API in the page. Confirmation turns
   on who proposed the action, enforced in the prompt only.

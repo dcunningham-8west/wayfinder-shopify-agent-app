@@ -1,4 +1,11 @@
-import { PageContext, PageSection } from '@wayfinder/contracts';
+import {
+  ActionTargetIds,
+  FormSubmissionResults,
+  PageContext,
+  PageSection,
+  TargetId,
+  type TargetId as TargetIdType,
+} from '@wayfinder/contracts';
 
 /**
  * Section 04. The theme emits this in Liquid at render time; the widget reads it and never
@@ -11,6 +18,39 @@ import { PageContext, PageSection } from '@wayfinder/contracts';
 
 const PAGE_SELECTOR = 'script[type="application/json"][data-wayfinder-page]';
 const SECTION_SELECTOR = 'script[type="application/json"][data-wayfinder-section]';
+
+export function readActionTargets(): TargetIdType[] {
+  const targets = [...document.querySelectorAll<HTMLFormElement>('form[data-agent-action]')]
+    .filter((form) => form.dataset.wayfinderSubmitted !== 'true')
+    .map((form) => TargetId.safeParse(form.dataset.agentAction))
+    .flatMap((parsed) => parsed.success ? [parsed.data] : []);
+  return ActionTargetIds.parse([...new Set(targets)]);
+}
+
+export function readFormResults() {
+  const results = [...document.querySelectorAll<HTMLFormElement>('form[data-agent-action]')]
+    .flatMap((form) => {
+      const result = form.querySelector<HTMLElement>('[data-wayfinder-form-result]');
+      const status = result?.dataset.wayfinderFormResult;
+      const targetId = TargetId.safeParse(form.dataset.agentAction);
+      if (!result || !targetId.success || (status !== 'success' && status !== 'error')) return [];
+      return [{ target_id: targetId.data, status }];
+    });
+  return FormSubmissionResults.parse(results);
+}
+
+export function clearFormResults(results: ReturnType<typeof readFormResults>): void {
+  const ids = new Set(results.map(({ target_id }) => target_id));
+  for (const form of document.querySelectorAll<HTMLFormElement>('form[data-agent-action]')) {
+    const targetId = TargetId.safeParse(form.dataset.agentAction);
+    if (!targetId.success || !ids.has(targetId.data)) continue;
+    const result = form.querySelector<HTMLElement>('[data-wayfinder-form-result]');
+    if (result?.dataset.wayfinderFormResult === 'success') {
+      form.dataset.wayfinderSubmitted = 'true';
+    }
+    if (result) result.dataset.wayfinderFormResult = 'none';
+  }
+}
 
 function parse(element: Element): unknown {
   try {

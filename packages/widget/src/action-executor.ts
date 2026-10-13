@@ -157,16 +157,56 @@ export async function executeAction(action: Action): Promise<Outcome> {
     case 'submit_form': {
       const form = findTarget(action.target_id);
       if (!(form instanceof HTMLFormElement)) return notFound();
-      for (const [name, value] of Object.entries(action.fields)) {
-        const field = form.elements.namedItem(name);
-        if (field instanceof HTMLInputElement) field.value = value;
+      if (form.dataset.wayfinderSubmitted === 'true') {
+        return failed('unavailable', 'this form has already been submitted');
+      }
+      if (form.dataset.wayfinderPrepared !== 'true') {
+        return failed('unavailable', 'prepare the form before submitting');
       }
       if (!form.reportValidity()) return failed('validation_failed');
+      form.dataset.wayfinderPrepared = 'false';
       void whenAgentFinishesSpeaking().then(() => {
         markAgentNavigation();
-        form.submit();
+        form.requestSubmit();
       });
-      return { status: 'ok' };
+      return { status: 'ok', submitting: true };
+    }
+
+    case 'fill_form': {
+      const form = findTarget(action.target_id);
+      if (!(form instanceof HTMLFormElement)) return notFound();
+      if (form.dataset.wayfinderSubmitted === 'true') {
+        return failed('unavailable', 'this form has already been submitted');
+      }
+
+      const entries = Object.entries(action.fields);
+      if (entries.length === 0) return failed('unavailable', 'no form details were provided');
+      const controls = entries.map(([name, value]) => {
+        const control = form.querySelector<HTMLElement>(
+          `[data-wayfinder-form-field="${CSS.escape(name)}"]`,
+        );
+        const supported =
+          control instanceof HTMLTextAreaElement ||
+          control instanceof HTMLSelectElement ||
+          (control instanceof HTMLInputElement && ['text', 'email', 'tel', 'search', 'url'].includes(control.type));
+        return supported && !control.disabled ? { control, value } : undefined;
+      });
+      if (controls.some((entry) => !entry)) {
+        return failed('unavailable', 'one or more form fields are not available');
+      }
+
+      form.dataset.wayfinderPrepared = 'false';
+      for (const entry of controls) {
+        if (!entry) continue;
+        entry.control.value = entry.value;
+        entry.control.dispatchEvent(new Event('input', { bubbles: true }));
+        entry.control.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (!form.reportValidity()) return failed('validation_failed');
+
+      form.dataset.wayfinderPrepared = 'true';
+      return { status: 'ok', ready: true };
     }
 
     case 'show_in_widget': {

@@ -1,6 +1,12 @@
 import { ActionSocket } from './action-socket.js';
 import { loadConfig } from './config.js';
-import { observePageContext, readPageContext } from './page-context.js';
+import {
+  clearFormResults,
+  observePageContext,
+  readActionTargets,
+  readFormResults,
+  readPageContext,
+} from './page-context.js';
 import { mountPreviewPanel } from './preview-panel.js';
 import { SessionClient, takeAgentNavigationMarker } from './session-client.js';
 import { setAgentTalking } from './speech.js';
@@ -83,7 +89,11 @@ function boot(): void {
 
     ui.setStatus(reconnecting ? 'RECONNECTING' : 'CONNECTING');
     try {
-      const [client, leg] = await Promise.all([loadVoice(), sessions.startCallLeg(pageContext)]);
+      const formResults = readFormResults();
+      const [client, leg] = await Promise.all([
+        loadVoice(),
+        sessions.startCallLeg(pageContext, readActionTargets(), formResults),
+      ]);
       if (typeof leg === 'string') {
         warn('call leg refused', leg);
         if (!(reconnecting && leg === 'rate_limited')) {
@@ -91,6 +101,7 @@ function boot(): void {
         }
         return leg === 'rate_limited' ? leg : undefined;
       }
+      clearFormResults(formResults);
 
       const handle = sessions.handle;
       if (handle) socket.open(handle);
