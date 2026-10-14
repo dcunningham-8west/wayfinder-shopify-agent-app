@@ -3,6 +3,7 @@ import type {
   Facet,
   GetLiveFactsArgs,
   GetLiveFactsResult,
+  GetProductDetailsResult,
   MatchQuality,
   PreviewTile,
   SearchCatalogueArgs,
@@ -100,6 +101,16 @@ export class CatalogueIndex implements Catalogue {
 
   async liveFacts(args: GetLiveFactsArgs): Promise<GetLiveFactsResult> {
     return this.liveFactsSource(args);
+  }
+
+  productDetails(productId: string): GetProductDetailsResult | undefined {
+    const product = this.#products.find((p) => p.product_id === productId);
+    if (!product) return undefined;
+    return {
+      product_id: product.product_id,
+      title: product.title,
+      description: product.description ?? '',
+    };
   }
 
   /** One entry, computed here so the agent admits the miss instead of broadening silently. */

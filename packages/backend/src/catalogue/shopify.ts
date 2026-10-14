@@ -11,6 +11,8 @@ import type { CatalogueProduct } from './types.js';
 
 const API_VERSION = '2026-10';
 const PAGE_SIZE = 250;
+/** Enough for a contents list; a full page of copy would be read aloud for a minute. */
+const DESCRIPTION_MAX_CHARS = 1500;
 
 const PRODUCTS_QUERY = `
   query CatalogueProducts($cursor: String) {
@@ -20,6 +22,7 @@ const PRODUCTS_QUERY = `
         id
         handle
         title
+        description(truncateAt: ${DESCRIPTION_MAX_CHARS})
         tags
         featuredImage { url(transform: { maxWidth: 600 }) }
         variants(first: 20) {
@@ -38,6 +41,7 @@ interface ShopifyProductNode {
   id: string;
   handle: string;
   title: string;
+  description?: string;
   tags: string[];
   featuredImage?: { url: string } | null;
   variants: { nodes: { id: string; title: string; availableForSale: boolean; price: string }[] };
@@ -115,6 +119,7 @@ function toCatalogueProduct(node: ShopifyProductNode, currency: string): Catalog
     handle: node.handle,
     title: node.title,
     url: `/products/${node.handle}`,
+    description: node.description?.trim() || undefined,
     facets: parseFacets(node.tags),
     variants,
     min_price_minor: Math.min(...variants.map((v) => v.price.amount_minor)),

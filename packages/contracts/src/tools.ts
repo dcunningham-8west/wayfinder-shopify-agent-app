@@ -79,10 +79,25 @@ export const GetLiveFactsResult = z
   .strict();
 export type GetLiveFactsResult = z.infer<typeof GetLiveFactsResult>;
 
-export const ToolName = z.enum(['search_catalogue', 'get_live_facts']);
+/** Merchant prose for one identified product. Never used to search or rank. */
+export const GetProductDetailsArgs = z.object({ product_id: ProductId }).strict();
+export type GetProductDetailsArgs = z.infer<typeof GetProductDetailsArgs>;
+
+export const GetProductDetailsResult = z
+  .object({
+    product_id: ProductId,
+    title: z.string().min(1),
+    /** Plain text, truncated; empty when the merchant wrote none. */
+    description: z.string(),
+  })
+  .strict();
+export type GetProductDetailsResult = z.infer<typeof GetProductDetailsResult>;
+
+export const ToolName = z.enum(['search_catalogue', 'get_live_facts', 'get_product_details']);
 export type ToolName = z.infer<typeof ToolName>;
 
 export const TOOL_SCHEMAS = {
   search_catalogue: { args: SearchCatalogueArgs, result: SearchCatalogueResult },
   get_live_facts: { args: GetLiveFactsArgs, result: GetLiveFactsResult },
+  get_product_details: { args: GetProductDetailsArgs, result: GetProductDetailsResult },
 } as const;

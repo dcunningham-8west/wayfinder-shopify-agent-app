@@ -52,3 +52,15 @@ test('unfiltered zero-score query still reports none', async () => {
 
   assert.equal(result.match_quality, 'none');
 });
+
+test('product details return the indexed description, empty when none, undefined when unknown', () => {
+  const catalogue = new CatalogueIndex(new LexicalRanker(), async () => ({ variants: [] }));
+  catalogue.replace([
+    { ...product(1, 'Travel Kit', {}), description: 'Collection contains: Cologne 50ml' },
+    product(2, 'Candle', {}),
+  ]);
+
+  assert.equal(catalogue.productDetails('gid://shopify/Product/1').description, 'Collection contains: Cologne 50ml');
+  assert.equal(catalogue.productDetails('gid://shopify/Product/2').description, '');
+  assert.equal(catalogue.productDetails('gid://shopify/Product/9'), undefined);
+});

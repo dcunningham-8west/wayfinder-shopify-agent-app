@@ -7,12 +7,13 @@ export interface CatalogueVariant {
   available: boolean;
 }
 
-/** One product as the Index holds it. Note the absence of description and body copy. */
+/** One product as the Index holds it. The description is for get_product_details only, never ranking. */
 export interface CatalogueProduct {
   product_id: ProductId;
   handle: string;
   title: string;
   url: string;
+  description?: string;
   /** The six-facet tag model. A facet absent from the map simply has no tags. */
   facets: Partial<Record<Facet, string[]>>;
   variants: CatalogueVariant[];

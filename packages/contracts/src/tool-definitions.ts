@@ -20,6 +20,11 @@ const DESCRIPTIONS: Record<ToolName, string> = {
   get_live_facts:
     'Get current price and availability for one product the shopper has already been shown. ' +
     'Call this before stating any price or saying something is in stock. Never use it to search.',
+  get_product_details:
+    'Get the product description for one product the shopper has already been shown or is ' +
+    'viewing. Call this before describing what a product is, what it contains, or how it ' +
+    'smells beyond its scent name. Answer only from the description returned; if it does not ' +
+    'say, tell the shopper so. Never use it to search.',
 };
 
 /** Only the keys Retell reads; `url` and timing are applied at provisioning time. */

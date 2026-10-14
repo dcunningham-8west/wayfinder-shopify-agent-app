@@ -2,6 +2,7 @@ import {
   Action,
   ActionName,
   GetLiveFactsArgs,
+  GetProductDetailsArgs,
   SearchCatalogueArgs,
   ToolName,
   type ProductId,
@@ -61,6 +62,13 @@ async function dispatchTool(name: ToolName, call: ToolCall, deps: ToolDeps): Pro
       const args = GetLiveFactsArgs.safeParse(call.args);
       if (!args.success) return invalidArguments(args);
       return { ok: true, result: await deps.catalogue.liveFacts(args.data) };
+    }
+    case 'get_product_details': {
+      const args = GetProductDetailsArgs.safeParse(call.args);
+      if (!args.success) return invalidArguments(args);
+      const details = deps.catalogue.productDetails(args.data.product_id);
+      if (!details) return { ok: false, error: 'unknown_product', detail: args.data.product_id };
+      return { ok: true, result: details };
     }
   }
 }

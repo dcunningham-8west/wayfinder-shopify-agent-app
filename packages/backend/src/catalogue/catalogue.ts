@@ -1,6 +1,7 @@
 import type {
   GetLiveFactsArgs,
   GetLiveFactsResult,
+  GetProductDetailsResult,
   PreviewTile,
   SearchCatalogueArgs,
   SearchCatalogueResult,
@@ -16,6 +17,8 @@ export interface Catalogue {
   digest(): string;
   search(args: SearchCatalogueArgs): Promise<SearchCatalogueResult>;
   liveFacts(args: GetLiveFactsArgs): Promise<GetLiveFactsResult>;
+  /** From the Index; undefined for an unknown id. */
+  productDetails(productId: string): GetProductDetailsResult | undefined;
   /** Where a product lives on the storefront, so opening one does not depend on the page. */
   urlFor(productId: string): string | undefined;
   /** Tiles for the Preview Panel, in the order given; unknown ids are dropped. */

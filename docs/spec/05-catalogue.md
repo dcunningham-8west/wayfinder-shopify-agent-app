@@ -73,6 +73,15 @@ latency hop, and the first voice test will say whether the gap is audible. Revis
 Price and stock, fetched **only** for a product the shopper has already identified. Never
 used for browsing, never used to rank.
 
+### Product details
+
+The merchant's description, as plain text truncated to 1,500 characters, for one product the
+shopper has already identified. Behind `get_product_details`. Loaded into the Index with the
+rest of the product, so it costs no API call; never searched or ranked, so it cannot compete
+with `search_catalogue`. This is where section 04's "prose comes from the catalogue, looked up
+by id" lands. If the description is silent on a question, the agent says so rather than
+inferring from the title.
+
 ## The actual catalogue
 
 Target store: `wayfinder-voice-bot-store.myshopify.com`.
