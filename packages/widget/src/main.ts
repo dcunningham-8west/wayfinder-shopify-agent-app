@@ -66,6 +66,7 @@ function boot(): void {
         ui.setStatus(talking ? 'SPEAKING' : 'LISTENING');
       },
     });
+    ui.onMuteChange((muted) => voice?.setAgentMuted(muted));
     return voice;
   }
 

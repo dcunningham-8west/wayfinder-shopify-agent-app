@@ -408,6 +408,21 @@
 .nav-voice-container .voice-dropdown-panel .panel-controls .control-btn.is-active {
   color: #f3f4f6;
 }
+.nav-voice-container .voice-dropdown-panel .panel-controls .control-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-voice-container .voice-dropdown-panel .panel-controls .control-btn:hover {
+  color: #ffffff;
+}
+.nav-voice-container .voice-dropdown-panel .panel-controls .control-btn .icon-off,
+.nav-voice-container .voice-dropdown-panel .panel-controls .control-btn.is-off .icon-on {
+  display: none;
+}
+.nav-voice-container .voice-dropdown-panel .panel-controls .control-btn.is-off .icon-off {
+  display: block;
+}
 .nav-voice-container .voice-dropdown-panel .panel-controls .action-buttons-group {
   display: flex;
   align-items: center;

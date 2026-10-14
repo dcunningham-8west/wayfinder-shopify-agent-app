@@ -10,6 +10,33 @@ export interface WidgetUi {
   minimise(): void;
   onStart(handler: () => void): void;
   onEnd(handler: () => void): void;
+  /** Called now with the remembered state, then on every toggle. */
+  onMuteChange(handler: (muted: boolean) => void): void;
+}
+
+/** Per tab, so a preference survives the reconnect on every page load. */
+const MUTED_KEY = 'wayfinder:muted';
+const SUBTITLES_OFF_KEY = 'wayfinder:subtitles-off';
+
+function bindToggle(
+  button: HTMLElement | null,
+  key: string,
+  labels: [on: string, off: string],
+  apply: (off: boolean) => void,
+): void {
+  let off = sessionStorage.getItem(key) === '1';
+  const render = () => {
+    button?.classList.toggle('is-off', off);
+    button?.setAttribute('aria-pressed', String(off));
+    button?.setAttribute('aria-label', off ? labels[1] : labels[0]);
+    apply(off);
+  };
+  button?.addEventListener('click', () => {
+    off = !off;
+    sessionStorage.setItem(key, off ? '1' : '0');
+    render();
+  });
+  render();
 }
 
 export function mountUi(root: HTMLElement): WidgetUi {
@@ -35,6 +62,18 @@ export function mountUi(root: HTMLElement): WidgetUi {
     else startHandler?.();
   });
   query('.close-panel-btn')?.addEventListener('click', minimise);
+
+  const transcript = query('.transcript-preview');
+  bindToggle(query('.subtitles-btn'), SUBTITLES_OFF_KEY, ['Hide subtitles', 'Show subtitles'], (off) =>
+    transcript?.classList.toggle('is-subtitles-enabled', !off),
+  );
+
+  let muteHandler: ((muted: boolean) => void) | undefined;
+  let muted = false;
+  bindToggle(query('.mute-btn'), MUTED_KEY, ['Mute assistant', 'Unmute assistant'], (off) => {
+    muted = off;
+    muteHandler?.(muted);
+  });
 
   // Any scroll minifies: the shopper is reading the page, not us.
   window.addEventListener('scroll', () => root.classList.contains('is-active') && minimise(), {
@@ -76,6 +115,10 @@ export function mountUi(root: HTMLElement): WidgetUi {
           handler();
         });
       }
+    },
+    onMuteChange(handler) {
+      muteHandler = handler;
+      handler(muted);
     },
   };
 }
