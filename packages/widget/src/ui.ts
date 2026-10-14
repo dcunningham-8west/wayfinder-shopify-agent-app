@@ -5,7 +5,6 @@
 
 export interface WidgetUi {
   setLive(live: boolean): void;
-  setListening(listening: boolean): void;
   setStatus(text: string): void;
   setTranscript(speaker: string, text: string): void;
   minimise(): void;
@@ -54,11 +53,9 @@ export function mountUi(root: HTMLElement): WidgetUi {
   return {
     setLive(live) {
       root.classList.toggle('is-connected', live);
+      for (const waveform of waveforms) waveform.classList.toggle('is-listening', live);
       if (live) expand();
       else root.classList.remove('is-active');
-    },
-    setListening(listening) {
-      for (const waveform of waveforms) waveform.classList.toggle('is-listening', listening);
     },
     setStatus(text) {
       if (statusText) statusText.textContent = text;

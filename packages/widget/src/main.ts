@@ -63,7 +63,6 @@ function boot(): void {
       },
       onAgentTalking: (talking) => {
         setAgentTalking(talking);
-        ui.setListening(!talking);
         ui.setStatus(talking ? 'SPEAKING' : 'LISTENING');
       },
     });
