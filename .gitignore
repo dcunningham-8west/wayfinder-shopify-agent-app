@@ -30,3 +30,4 @@ packages/theme/assets/wayfinder-*.js.map
 Thumbs.db
 .idea/
 *.swp
+*.csv

@@ -82,14 +82,19 @@ export class CatalogueIndex implements Catalogue {
     const candidates = this.#products.filter((p) => matchesFilters(p, args));
     const ranked = await this.ranker.rank(args.query, candidates);
     const quality = qualityOf(ranked);
+    const filtered = (args.facets ?? []).length > 0 && candidates.length > 0;
 
-    if (quality === 'none') {
+    if (quality === 'none' && !filtered) {
       return { match_quality: 'none', results: [], alternatives: await this.#alternatives(args) };
     }
 
+    // Passing a facet filter already satisfies the request; a low lexical score must not hide it.
+    const rankedProducts = ranked.map((r) => r.product);
+    const ordered = [...rankedProducts, ...candidates.filter((p) => !rankedProducts.includes(p))];
+
     return {
-      match_quality: quality,
-      results: ranked.slice(0, MAX_RESULTS).map((r) => toMatch(r.product)),
+      match_quality: quality === 'none' ? 'weak' : quality,
+      results: ordered.slice(0, MAX_RESULTS).map(toMatch),
     };
   }
 
