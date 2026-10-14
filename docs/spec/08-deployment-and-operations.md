@@ -93,6 +93,13 @@ root, cannot address `packages/theme`, and fights CI for ownership of the same f
 Accepted cost: Admin's theme code editor is no longer authoritative — CI overwrites it. Admin
 remains the source of truth for **content** (products, collections, pages, menus).
 
+**The theme editor owns layout.** Theme editor changes (sections, blocks, which collection a
+section shows) are saved as theme JSON, not content, so CI ignores them on push:
+`templates/*.json`, `templates/customers/*.json`, `config/settings_data.json` and
+`sections/*-group.json`. The repo copies of those files are not deployed. A push once
+reverted a home page built in the editor; this split prevents it. To change layout from the
+repo, edit in the theme editor instead, or push that file manually with `--only`.
+
 ## Credentials
 
 ### Shopify Admin API — legacy custom app

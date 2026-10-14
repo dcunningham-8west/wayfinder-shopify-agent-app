@@ -42,4 +42,8 @@ jobs:
           --path packages/theme
           --live
           --allow-live
+          --ignore 'templates/*.json'
+          --ignore 'templates/customers/*.json'
+          --ignore 'config/settings_data.json'
+          --ignore 'sections/*-group.json'
           --json
