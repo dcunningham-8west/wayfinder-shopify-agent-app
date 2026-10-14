@@ -15,22 +15,22 @@
         "template--18309637636369__6a3bb789-ce10-45f5-ae67-e2063ef8c76b-168016437761699a6e-0": {
           "type": "heading",
           "settings": {
-            "heading": "Jo Malone London",
-            "heading_size": "h1"
+            "heading": "&nbsp;Christmas Kist Advent Calendar",
+            "heading_size": "h2"
           }
         },
         "template--18309637636369__6a3bb789-ce10-45f5-ae67-e2063ef8c76b-168016437761699a6e-1": {
           "type": "text",
           "settings": {
-            "text": "Christmas Kist Advent Calendar&nbsp;",
+            "text": "&nbsp;Roar into a holiday of charm and cheer with this luxurious trunk.",
             "text_style": "body"
           }
         },
         "template--18309637636369__6a3bb789-ce10-45f5-ae67-e2063ef8c76b-168016437761699a6e-2": {
           "type": "buttons",
           "settings": {
-            "button_label_1": "Shop all products",
-            "button_link_1": "shopify://collections/all",
+            "button_label_1": "Shop Now",
+            "button_link_1": "shopify://products/christmas-kist-advent-calendar",
             "button_style_secondary_1": false,
             "button_label_2": "",
             "button_link_2": "",
@@ -60,13 +60,14 @@
     },
     "featured_collection": {
       "type": "featured-collection",
+      "name": "Gift featured collection",
       "settings": {
-        "title": "<strong>Featured products</strong>",
+        "title": "Gift Collections",
         "heading_size": "h1",
-        "description": "",
+        "description": "<p>Thoughtful gifting made simple—find something special in seconds.</p>",
         "show_description": false,
         "description_style": "body",
-        "collection": "automated-collection",
+        "collection": "our-best-gift-collection-yet",
         "products_to_show": 10,
         "columns_desktop": 3,
         "full_width": false,
@@ -116,7 +117,7 @@
         "template--18309637636369__f1552b18-6017-4231-810d-74e61da22c37-1680164422d7fb2efc-2"
       ],
       "settings": {
-        "image": "shopify://shop_images/jml_banner_image.jpg",
+        "image": "shopify://shop_images/l76d01-0.png",
         "height": "adapt",
         "desktop_image_width": "medium",
         "layout": "image_first",
@@ -130,27 +131,114 @@
         "padding_bottom": 60
       }
     },
-    "38cdf60f-e431-43b5-aac3-7e6215447d67": {
-      "type": "collection-list",
+    "featured_collection_RrPgjm": {
+      "type": "featured-collection",
+      "name": "Fruity featured collection",
+      "settings": {
+        "title": "&nbsp;Luscious & Fruity Scents&nbsp;",
+        "heading_size": "h1",
+        "description": "<p>Luscious fruity fragrances burst with a mouth-watering juiciness and delectable sweetness. From berries to pears, these vibrant and fresh ingredients add succulency and playfulness.<br/><br/></p>",
+        "show_description": false,
+        "description_style": "body",
+        "collection": "luscious-fruity-scents",
+        "products_to_show": 9,
+        "columns_desktop": 4,
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "solid",
+        "enable_desktop_slider": true,
+        "color_scheme": "background-1",
+        "image_ratio": "adapt",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "enable_quick_add": false,
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "multicolumn_3eaP9g": {
+      "type": "multicolumn",
       "blocks": {
-        "template--18309637636369__38cdf60f-e431-43b5-aac3-7e6215447d67-1680164898782d94ce-1": {
-          "type": "featured_collection",
+        "column_HtKNYQ": {
+          "type": "column",
           "settings": {
-            "collection": "automated-collection"
+            "image": "shopify://shop_images/step_2.avif",
+            "title": "&nbsp;Complimentary Gift Wrap",
+            "text": "<p>Each Jo Malone London gift is presented in our signature cream and black box, tied with luxurious ribbon*. With our compliments.</p>",
+            "link_label": "Find A Gift",
+            "link": "shopify://collections/our-best-gift-collection-yet"
+          }
+        },
+        "column_DeYwne": {
+          "type": "column",
+          "settings": {
+            "image": "shopify://shop_images/step_3.avif",
+            "title": "&nbsp;Delivery options",
+            "text": "<p>Choose your preferred option. Complimentary curb-side pick-up, standard delivery, next day, overnight, and buy online, pick-up in-store are all available.</p>",
+            "link_label": "Find Out More",
+            "link": "shopify://pages/delivery-options"
+          }
+        },
+        "column_DmwBwT": {
+          "type": "column",
+          "settings": {
+            "image": "shopify://shop_images/step_1.avif",
+            "title": "Help & Contact",
+            "text": "<p>We’re here to help—reach out anytime and let us know what you. &nbsp;From order tracking to product advice, we’re just a message away.</p>",
+            "link_label": "Contact Us",
+            "link": "shopify://pages/contact"
           }
         }
       },
       "block_order": [
-        "template--18309637636369__38cdf60f-e431-43b5-aac3-7e6215447d67-1680164898782d94ce-1"
+        "column_HtKNYQ",
+        "column_DeYwne",
+        "column_DmwBwT"
       ],
+      "name": "t:sections.multicolumn.presets.name",
       "settings": {
-        "title": "<strong>Our collection</strong>",
+        "title": "&nbsp;Complimentary Benefits",
         "heading_size": "h1",
-        "image_ratio": "portrait",
-        "columns_desktop": 2,
+        "image_width": "full",
+        "image_ratio": "adapt",
+        "columns_desktop": 3,
+        "column_alignment": "left",
+        "background_style": "primary",
+        "button_label": "",
+        "button_link": "",
         "color_scheme": "background-1",
-        "show_view_all": false,
         "columns_mobile": "1",
+        "swipe_on_mobile": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "featured_collection_KHcdja": {
+      "type": "featured-collection",
+      "name": "Candles featured collection",
+      "settings": {
+        "title": "Just want candles?",
+        "heading_size": "h1",
+        "description": "<p>Create scented stories tailored to any and every space with our home fragrances. Explore scents for home that set the mood and discover the perfect fit for every room and season. Let our house inspire your home.</p>",
+        "show_description": false,
+        "description_style": "body",
+        "collection": "automated-collection",
+        "products_to_show": 11,
+        "columns_desktop": 4,
+        "full_width": false,
+        "show_view_all": true,
+        "view_all_style": "solid",
+        "enable_desktop_slider": true,
+        "color_scheme": "background-1",
+        "image_ratio": "adapt",
+        "show_secondary_image": false,
+        "show_vendor": false,
+        "show_rating": false,
+        "enable_quick_add": false,
+        "columns_mobile": "2",
         "swipe_on_mobile": false,
         "padding_top": 36,
         "padding_bottom": 36
@@ -161,6 +249,8 @@
     "6a3bb789-ce10-45f5-ae67-e2063ef8c76b",
     "featured_collection",
     "f1552b18-6017-4231-810d-74e61da22c37",
-    "38cdf60f-e431-43b5-aac3-7e6215447d67"
+    "featured_collection_RrPgjm",
+    "multicolumn_3eaP9g",
+    "featured_collection_KHcdja"
   ]
 }
