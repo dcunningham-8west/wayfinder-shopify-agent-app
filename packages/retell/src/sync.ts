@@ -57,6 +57,8 @@ async function main(): Promise<void> {
     // 0.8 silently adds ~1.5 s to every turn; this is a latency decision, not a style one.
     responsiveness: 1,
     interruption_sensitivity: 1,
+    // "home page" was transcribed as "whole page" and navigated to /collections/all.
+    boosted_keywords: ['home page', 'homepage'],
     data_storage_setting: RETELL_DATA_STORAGE.setting,
     data_storage_retention_days: RETELL_DATA_STORAGE.retentionDays,
     pii_config: {
