@@ -28,6 +28,9 @@
             <span class='status-indicator'></span>
             <span class='mini-text'>{{ section.settings.idle_label | default: 'SHOPPING ASSISTANT' }}</span>
           </div>
+          <button class='init-agent-btn' type='button'>
+            {{ section.settings.start_call_label | default: 'START CALL' }}
+          </button>
         </div>
         <div class='mini-content-connected'>
           <div class='mini-waveform'>
@@ -99,6 +102,12 @@
       "id": "idle_label",
       "label": "Idle label",
       "default": "SHOPPING ASSISTANT"
+    },
+    {
+      "type": "text",
+      "id": "start_call_label",
+      "label": "Start call button label",
+      "default": "START CALL"
     }
   ]
 }
