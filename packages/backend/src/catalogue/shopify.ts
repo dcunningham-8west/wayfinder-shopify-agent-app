@@ -21,7 +21,8 @@ const PRODUCTS_QUERY = `
       nodes {
         id
         handle
-        onlineStoreUrl
+        status
+        publishedAt
         title
         description(truncateAt: ${DESCRIPTION_MAX_CHARS})
         tags
@@ -41,8 +42,9 @@ const PRODUCTS_QUERY = `
 interface ShopifyProductNode {
   id: string;
   handle: string;
-  /** Null when not published to the Online Store: drafts, archived, or channel-hidden. */
-  onlineStoreUrl: string | null;
+  status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
+  /** Null when not published to the Online Store. Not onlineStoreUrl: that is null on a password-protected store. */
+  publishedAt: string | null;
   title: string;
   description?: string;
   tags: string[];
@@ -71,7 +73,7 @@ export async function fetchCatalogue(config: ShopifyConfig): Promise<CataloguePr
     const page: ProductsPage = await graphql<ProductsPage>(config, PRODUCTS_QUERY, { cursor });
     products.push(
       ...page.products.nodes
-        .filter((node) => node.onlineStoreUrl !== null)
+        .filter((node) => node.status === 'ACTIVE' && node.publishedAt !== null)
         .map((node) => toCatalogueProduct(node, config.currency ?? 'GBP')),
     );
     cursor = page.products.pageInfo.hasNextPage ? page.products.pageInfo.endCursor : null;
