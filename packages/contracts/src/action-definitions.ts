@@ -18,7 +18,9 @@ export const ACTION_DESCRIPTIONS: Record<ActionName, string> = {
     'new price and availability.',
   add_to_cart:
     'Add a variant to the cart. Only call this after the shopper has agreed to this exact ' +
-    'product in the turn before. Never call it to check a price.',
+    'product in the turn before. Never call it to check a price. Needs a variant_id: take it ' +
+    'from the page context, or call get_live_facts first — no product page needed. If the ' +
+    'product has one variant, use it without asking the shopper to choose.',
   update_cart_line:
     'Change the quantity of a line already in the cart; qty 0 removes it. Needs the same ' +
     'confirmation as adding.',

@@ -206,7 +206,7 @@ choice instead of forcing the panel:
 | --- | --- |
 | Single `exact` / `strong` product | **No offer.** Panel opens immediately, as before |
 | Several results, or **any facet-filtered search** (regardless of `match_quality`) | **Offer** |
-| `weak`, no facets | Clarify / confirm first ([section 11](./11-disambiguation.md)) |
+| `weak`, no facets | **No offer.** Panel opens immediately; the agent clarifies by voice ([section 11](./11-disambiguation.md)) |
 | `none` | Admit it, offer one alternative ([section 11](./11-disambiguation.md)) |
 
 Facet-filtered searches always get the Offer because the ranker scores titles lexically: a
