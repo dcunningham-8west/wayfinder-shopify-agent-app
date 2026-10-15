@@ -30,12 +30,12 @@ function within(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
 }
 
 /** Page-leaving tools speak during execution, so their line is underway or just about to start. */
-const WAIT_FOR_SPEECH_MS = 1_000;
+const WAIT_FOR_SPEECH_MS = 4_000;
 /**
- * Retell streams speech in chunks, so `agent_stop_talking` fires between sentences too. Gaps
- * within a turn are short.
+ * Retell streams speech in chunks, so `agent_stop_talking` fires between sentences too, with gaps
+ * between sentences. Only quiet that lasts counts as finished.
  */
-const SUSTAINED_QUIET_MS = 1_200;
+const SUSTAINED_QUIET_MS = 2_500;
 /** Caps the wait when the agent says a great deal. */
 const MAX_TOTAL_MS = 20_000;
 
