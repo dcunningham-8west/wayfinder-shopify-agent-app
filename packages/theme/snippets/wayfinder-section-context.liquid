@@ -11,14 +11,26 @@
     wayfinder_products    optional product list
     wayfinder_furniture   optional comma-joined "kind:label" pairs
     wayfinder_furniture_json optional pre-serialized furniture entries
+    wayfinder_label       optional visible heading
+    wayfinder_collection_handle optional
+    wayfinder_limit       optional, how many products the section renders
+
+  The section's wrapper must carry data-agent-action='{{ section.id }}' so scroll_to can find it.
 {%- endcomment -%}
 
 <script type='application/json' data-wayfinder-section>
   {
     "section_id": {{ wayfinder_section_id | json }},
     "kind": {{ wayfinder_kind | json }},
+    {%- if wayfinder_label != blank -%}
+      "label": {{ wayfinder_label | strip_html | strip | json }},
+    {%- endif -%}
+    {%- if wayfinder_collection_handle != blank -%}
+      "collection_handle": {{ wayfinder_collection_handle | json }},
+    {%- endif -%}
     "products": [
-      {%- for wayfinder_product in wayfinder_products -%}
+      {%- assign wayfinder_max = wayfinder_limit | default: 50 -%}
+      {%- for wayfinder_product in wayfinder_products limit: wayfinder_max -%}
         {
           "product_id": "gid://shopify/Product/{{ wayfinder_product.id }}",
           "handle": {{ wayfinder_product.handle | json }},

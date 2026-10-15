@@ -34,6 +34,13 @@ export const ACTION_DESCRIPTIONS: Record<ActionName, string> = {
   show_in_widget:
     'Show a small panel of products in the voice widget so the shopper can see what you ' +
     'are describing without leaving the page.',
+  show_preview:
+    'Show the products from your last search as tiles in the widget. Use when the shopper ' +
+    'accepts your offer to see them now, or asks to see them.',
+  show_on_page:
+    'Take the shopper to the products from your last search: scrolls to them if they are on ' +
+    'this page, otherwise opens a page listing them. Use when the shopper accepts your offer ' +
+    'to be taken to them, or asks to be taken there.',
 };
 
 /** The member schema still carries its `action` literal; the generator drops it. */

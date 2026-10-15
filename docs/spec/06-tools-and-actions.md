@@ -98,8 +98,15 @@ This table is what the `contracts` package holds.
 | `fill_form` | `target_id`, `fields` | browser (target) | ready / validation errors |
 | `submit_form` | `target_id` | browser (target) | submission pending |
 | `show_in_widget` | `product_ids[]` | browser (widget) | ok — behaviour deferred |
+| `show_preview` | — | browser (widget) | ok / `unavailable`; pushes the backend's staged tiles |
+| `show_on_page` | — | browser (target or URL) | ok / `target_not_found`; backend resolves to `scroll_to` or `navigate` |
 
 ### Notes on specific actions
+
+**`scroll_to` targets sections and on-page products.** Every section that emits Page Context
+also carries `data-agent-action` equal to its `section_id`, so the agent scrolls by naming a
+section id it already holds. One id, emitted in one place — the target and the context cannot
+drift. Product cards remain targets by product id.
 
 **Cart reads and writes run in the browser**, through the locale-aware Ajax Cart API. Before
 each Call Leg, the widget reads `/cart.js` and sends the validated Cart Snapshot to the
@@ -180,11 +187,47 @@ One source of visual truth.
 
 ### Behaviour (decided in the build)
 
-- **The backend opens it, not the agent.** Every `search_catalogue` pushes its results (or its
-  `alternatives` on `none`) as `show_in_widget` with server-filled `tiles`. The search result
-  carries `preview: "shown" | "not_shown"` — the agent's only evidence the panel is up.
-  `show_in_widget` stays out of the agent's tool set: a panel that depends on the model
-  remembering to call it fails the way [KF-001](../known-failures.md) did.
+- **The backend decides what may be shown; the shopper decides how.** Every
+  `search_catalogue` **stages** its results (or its `alternatives` on `none`) as tiles in
+  Session State. Whether they are pushed immediately depends on the Offer below.
+  `show_in_widget` stays out of the agent's tool set; the agent's only route to the panel is
+  `show_preview`, which takes **no arguments** and pushes the staged tiles — so the agent can
+  never send the wrong ids ([KF-001](../known-failures.md)). The search result carries
+  `preview: "shown" | "not_shown" | "staged"` — the agent's only evidence of panel state.
+
+### The Offer: show now, or take you there
+
+The panel is one way to see products, not the only one. For broad results the agent offers a
+choice instead of forcing the panel:
+
+> "We have a selection of fruity fragrances. I can show some now, or take you to them?"
+
+| Search result | Behaviour |
+| --- | --- |
+| Single `exact` / `strong` product | **No offer.** Panel opens immediately, as before |
+| Several results, or **any facet-filtered search** (regardless of `match_quality`) | **Offer** |
+| `weak`, no facets | Clarify / confirm first ([section 11](./11-disambiguation.md)) |
+| `none` | Admit it, offer one alternative ([section 11](./11-disambiguation.md)) |
+
+Facet-filtered searches always get the Offer because the ranker scores titles lexically: a
+browse that passed its facet filter exactly can still be reported as `weak`.
+
+**The backend computes the Offer** and returns it on the search result:
+`offer: { on_page: "scroll" | "navigate", ask: boolean }`. The target and URL stay in
+Session State; the agent never sees or sends them.
+
+- **"Show me now"** → `show_preview`.
+- **"Take me there"** → `show_on_page`, which the backend resolves to `scroll_to` when a
+  section on the current page holds matching products (overlapping product ids, else a label
+  sharing a query word). Otherwise `navigate` to a **filtered collection URL**
+  (`/collections/all?filter.p.m.custom.<facet>=<value>`, as `apply_filter` builds), or to
+  `/search?q=` when the search had no facets.
+- **The shopper already said how** ("show me the fruity ones", "take me to the candles") →
+  skip the Offer and act. *Execute when the shopper asks.*
+- **The choice is sticky for the Session.** Once the shopper picks one, later broad searches
+  apply it: `preview` pushes the panel at once; `on_page` returns `ask: false` and the agent
+  calls `show_on_page` without asking. Held on the backend Session, so it survives Call Legs;
+  it does not outlive the Session. The shopper can still ask for the other way at any time.
 - **Bounded cost.** The push waits at most 1.5 s; a slow or absent page costs the panel, never
   the search answer.
 - **Cycling follows speech.** The tile whose distinctive title words the agent most recently

@@ -217,5 +217,10 @@ export async function executeAction(action: Action): Promise<Outcome> {
       );
       return shown ? { status: 'ok' } : failed('unavailable', 'preview panel not shown');
     }
+
+    // The backend resolves these into show_in_widget / scroll_to / navigate before sending.
+    case 'show_preview':
+    case 'show_on_page':
+      return failed('unavailable', 'resolved by the backend');
   }
 }

@@ -6,13 +6,15 @@ import {
   SearchCatalogueArgs,
   ToolName,
   type ProductId,
+  type SearchCatalogueResult,
   type SessionId,
+  type TargetId,
 } from '@wayfinder/contracts';
 import type { SafeParseReturnType } from 'zod';
 import type { ActionChannel } from '../actions/action-channel.js';
 import type { Catalogue } from '../catalogue/catalogue.js';
 import type { Destinations } from '../destinations/destinations.js';
-import type { SessionStore } from '../session/session-store.js';
+import type { Session, SessionStore, StagedResults } from '../session/session-store.js';
 
 /**
  * The tool seam, with no HTTP in it. Section 12: this is testable as a plain function call.
@@ -56,6 +58,22 @@ async function dispatchTool(name: ToolName, call: ToolCall, deps: ToolDeps): Pro
       const args = SearchCatalogueArgs.safeParse(call.args);
       if (!args.success) return invalidArguments(args);
       const result = await deps.catalogue.search(args.data);
+      const session = call.sessionId ? deps.sessions.get(call.sessionId) : undefined;
+      if (session) session.staged = undefined;
+
+      if (session && isBroad(result, args.data)) {
+        const ids = result.results.map((m) => m.product_id);
+        if (session.presentation === 'preview') {
+          return { ok: true, result: { ...result, preview: await showPreview(session.id, ids, deps) } };
+        }
+        session.staged = {
+          tiles: deps.catalogue.previewTiles(ids),
+          onPage: onPageFor(session, ids, args.data),
+        };
+        const offer = { on_page: session.staged.onPage.kind, ask: session.presentation !== 'on_page' };
+        return { ok: true, result: { ...result, preview: 'staged', offer } };
+      }
+
       const shown = result.results.length > 0 ? result.results : (result.alternatives ?? []);
       const preview = await showPreview(call.sessionId, shown.map((m) => m.product_id), deps);
       return { ok: true, result: { ...result, preview } };
@@ -93,15 +111,101 @@ async function showPreview(
   return outcome.status === 'ok' ? 'shown' : 'not_shown';
 }
 
+/** Section 06, the Offer: several confident results, or any facet-filtered browse. */
+function isBroad(result: SearchCatalogueResult, args: SearchCatalogueArgs): boolean {
+  if (result.results.length === 0) return false;
+  if ((args.facets?.length ?? 0) > 0) return true;
+  return result.results.length > 1 && result.match_quality !== 'weak';
+}
+
+/** A section already showing the results beats leaving the page. */
+function onPageFor(
+  session: Session,
+  ids: ProductId[],
+  args: SearchCatalogueArgs,
+): StagedResults['onPage'] {
+  const sections = session.pageContext?.sections ?? [];
+  const wanted = new Set(ids);
+  let best: { id: string; overlap: number } | undefined;
+  for (const s of sections) {
+    const overlap = s.products.filter((p) => wanted.has(p.product_id)).length;
+    if (overlap > 0 && (!best || overlap > best.overlap)) best = { id: s.section_id, overlap };
+  }
+  const queryWords = words(args.query);
+  const labelled = sections.find((s) => s.label && [...words(s.label)].some((w) => queryWords.has(w)));
+  const target = best?.id ?? labelled?.section_id;
+  if (target) return { kind: 'scroll', target_id: target as TargetId };
+
+  if (args.facets && args.facets.length > 0) {
+    const params = new URLSearchParams();
+    for (const f of args.facets) {
+      for (const v of f.values) params.append(`filter.p.m.custom.${f.facet}`, v);
+    }
+    return { kind: 'navigate', destination_id: 'collection:all', url: `/collections/all?${params}` };
+  }
+  const params = new URLSearchParams({ q: args.query, type: 'product' });
+  return { kind: 'navigate', destination_id: 'search', url: `/search?${params}` };
+}
+
+/** Crude singular folding so "candles" meets "candle"; short words are noise. */
+function words(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length > 3)
+      .map((w) => w.replace(/s$/, '')),
+  );
+}
+
+/** Resolves the arg-less Offer actions against what the last search staged. */
+async function performOffer(
+  name: 'show_preview' | 'show_on_page',
+  sessionId: SessionId,
+  deps: ToolDeps,
+): Promise<ToolOutcome> {
+  const session = deps.sessions.get(sessionId);
+  const staged = session?.staged;
+  if (!session || !staged) return { ok: false, error: 'nothing_staged', detail: 'search first' };
+
+  if (name === 'show_preview') {
+    const outcome = await deps.actions.perform(sessionId, {
+      action: 'show_in_widget',
+      product_ids: staged.tiles.map((t) => t.product_id),
+      tiles: staged.tiles,
+    });
+    if (outcome.status === 'ok') session.presentation = 'preview';
+    return { ok: true, result: outcome };
+  }
+
+  const onPage = staged.onPage;
+  const outcome = await deps.actions.perform(
+    sessionId,
+    onPage.kind === 'scroll'
+      ? { action: 'scroll_to', target_id: onPage.target_id }
+      : { action: 'navigate', destination_id: onPage.destination_id, url: onPage.url },
+  );
+  if (outcome.status === 'ok') {
+    session.presentation = 'on_page';
+    if (onPage.kind === 'navigate') deps.sessions.markAgentNavigation(sessionId);
+  }
+  return { ok: true, result: outcome };
+}
+
 async function dispatchAction(
   name: ActionName,
   call: ToolCall,
-  { actions, sessions, catalogue, destinations }: ToolDeps,
+  deps: ToolDeps,
 ): Promise<ToolOutcome> {
+  const { actions, sessions, catalogue, destinations } = deps;
   if (!call.sessionId) return { ok: false, error: 'no_session', detail: 'call has no session' };
 
   const action = Action.safeParse({ ...(call.args as object), action: name });
   if (!action.success) return invalidArguments(action);
+
+  if (action.data.action === 'show_preview' || action.data.action === 'show_on_page') {
+    return performOffer(action.data.action, call.sessionId, deps);
+  }
 
   if (action.data.action === 'navigate') {
     const url = destinations.urlFor(action.data.destination_id);

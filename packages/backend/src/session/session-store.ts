@@ -3,9 +3,11 @@ import type {
   CallLegId,
   PageContext,
   PageContextProduct,
+  PreviewTile,
   ReferentSet,
   SessionId,
   SessionState,
+  TargetId,
   TranscriptTurn,
 } from '@wayfinder/contracts';
 import { MAX_SESSIONS_IN_MEMORY, REFERENT_SET_CAPACITY, TIMING } from '@wayfinder/contracts';
@@ -31,6 +33,17 @@ export interface Session {
   legTranscriptStart: number;
   lastLegCreatedAt?: number;
   lastSeenAt: number;
+  /** The last search's results awaiting the shopper's answer to the Offer. */
+  staged?: StagedResults;
+  /** Sticky for the Session once the shopper picks how to see results. */
+  presentation?: 'preview' | 'on_page';
+}
+
+export interface StagedResults {
+  tiles: PreviewTile[];
+  onPage:
+    | { kind: 'scroll'; target_id: TargetId }
+    | { kind: 'navigate'; destination_id: string; url: string };
 }
 
 export class SessionStore {
@@ -89,6 +102,10 @@ export class SessionStore {
     }
     session.pageContext = pageContext;
     session.lastSeenAt = this.now();
+  }
+
+  get(id: SessionId): Session | undefined {
+    return this.#sessions.get(id);
   }
 
   /** Set by the agent's own navigate, read by the next leg's Seed so it does not re-greet. */

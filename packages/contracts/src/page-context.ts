@@ -53,8 +53,12 @@ export type Furniture = z.infer<typeof Furniture>;
 
 export const PageSection = z
   .object({
+    /** Also the section's `scroll_to` target id. */
     section_id: z.string().min(1),
     kind: z.string().min(1),
+    /** The section's visible heading. */
+    label: z.string().min(1).optional(),
+    collection_handle: z.string().min(1).optional(),
     products: z.array(PageContextProduct).default([]),
     furniture: z.array(Furniture).default([]),
   })

@@ -21,7 +21,7 @@ prompt judgement:
 
 | Matches vary by | Behaviour |
 | --- | --- |
-| **`Scent`** | Browsing. Name two or three, `show_in_widget`, stop |
+| **`Scent`** | Browsing. Name two or three, make the Offer ([section 06](./06-tools-and-actions.md)), stop |
 | **`maincat` only** (same scent) | One closed question: *"the candle or the cologne?"* |
 
 Reading four formats of the same scent aloud is the failure mode. It sounds like a database,
@@ -35,7 +35,7 @@ The search tool returns a coarse **`match_quality`**, not a raw score:
 | --- | --- | --- |
 | `exact` | Named product or scent | Act |
 | `strong` | Confident semantic match | Act |
-| `weak` | Plausible but uncertain | **Confirm by name before acting** |
+| `weak` | Plausible but uncertain | **Confirm by name before acting** — unless the search was facet-filtered, which goes straight to the Offer ([section 06](./06-tools-and-actions.md)) |
 | `none` | Nothing matches | Admit it, offer one alternative |
 
 An embedding search always returns *something*. Without `match_quality` there is no mechanical

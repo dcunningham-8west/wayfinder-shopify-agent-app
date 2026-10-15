@@ -169,6 +169,12 @@ A panel inside the widget showing product tiles the agent narrates in turn. Carr
 only, and every tile leads to the storefront — a way *to* the real product page, never a
 replacement for it.
 
+## Offer
+The agent's "show you now, or take you there?" after a broad or facet-filtered search. "Show"
+opens the **Preview Panel**; "take" scrolls to a matching on-page section or navigates to a
+filtered collection. Skipped for a single confident match, when the shopper already said how,
+and after the shopper's first choice in a Session.
+
 ## Show, don't recite
 The agent names two or three things, puts them on screen, and stops — like a shop assistant
 walking you to a shelf rather than reading the price list aloud. Detail is pulled by the

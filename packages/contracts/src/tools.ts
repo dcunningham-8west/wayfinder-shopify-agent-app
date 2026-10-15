@@ -49,7 +49,15 @@ export const SearchCatalogueResult = z
      */
     alternatives: z.array(CatalogueMatch).max(2).optional(),
     /** Set by the backend after pushing results to the Preview Panel; the agent's only evidence it did. */
-    preview: z.enum(['shown', 'not_shown']).optional(),
+    preview: z.enum(['shown', 'not_shown', 'staged']).optional(),
+    /**
+     * Present when results are staged rather than shown. `on_page` says what "take me there"
+     * would do; `ask: false` means the shopper already chose that way this Session.
+     */
+    offer: z
+      .object({ on_page: z.enum(['scroll', 'navigate']), ask: z.boolean() })
+      .strict()
+      .optional(),
   })
   .strict();
 export type SearchCatalogueResult = z.infer<typeof SearchCatalogueResult>;

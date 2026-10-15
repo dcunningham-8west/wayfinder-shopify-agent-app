@@ -77,6 +77,9 @@ export const Action = z.discriminatedUnion('action', [
     /** Filled by the backend from the Catalogue; the agent only ever names ids. */
     tiles: z.array(PreviewTile).max(5).optional(),
   }),
+  // No arguments: the backend resolves both from the last search, so the agent cannot name the wrong thing.
+  z.object({ action: z.literal('show_preview') }),
+  z.object({ action: z.literal('show_on_page') }),
 ]);
 export type Action = z.infer<typeof Action>;
 
@@ -92,6 +95,8 @@ export const ActionName = z.enum([
   'submit_form',
   'fill_form',
   'show_in_widget',
+  'show_preview',
+  'show_on_page',
 ]);
 export type ActionName = z.infer<typeof ActionName>;
 
@@ -157,6 +162,8 @@ const ResultByAction = {
   submit_form: ok({ submitting: z.literal(true) }),
   fill_form: ok({ ready: z.literal(true) }),
   show_in_widget: ok({}),
+  show_preview: ok({}),
+  show_on_page: ok({}),
 } as const;
 
 export const ActionResult = z

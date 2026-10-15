@@ -68,6 +68,13 @@ Every page splits in two:
 The split is what lets the agent answer "what's on this page?" without inventing product
 claims from a hero banner's marketing copy.
 
+### Coverage
+
+Every section that shows products emits section context — including `featured-collection`
+(heading as label, its rendered products, its collection handle), so a homepage with several
+carousels is fully visible. Each emitting section's wrapper carries `data-agent-action` equal
+to its `section_id`, making it a `scroll_to` target ([section 06](./06-tools-and-actions.md)).
+
 ## Lifecycle
 
 Read by the widget on load, carried into the **Session Seed**, and sent **once per Call Leg**.
