@@ -7,6 +7,7 @@ import {
 } from '@wayfinder/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Catalogue } from '../catalogue/catalogue.js';
+import type { Destinations } from '../destinations/destinations.js';
 import { assembleSeed, continuityMode } from '../session/seed.js';
 import type { Session, SessionStore } from '../session/session-store.js';
 import type { TranscriptRelay } from '../voice/transcript-relay.js';
@@ -15,6 +16,7 @@ import type { VoiceProvider } from '../voice/voice-provider.js';
 export interface SessionRoutesOptions {
   sessions: SessionStore;
   catalogue: Pick<Catalogue, 'digest'>;
+  destinations?: Pick<Destinations, 'list'>;
   /** Absent until the Retell agent exists; the endpoint says so rather than pretending. */
   voice?: VoiceProvider;
   transcripts?: TranscriptRelay;
@@ -22,7 +24,7 @@ export interface SessionRoutesOptions {
 
 export function registerSessionRoutes(
   app: FastifyInstance,
-  { sessions, catalogue, voice, transcripts }: SessionRoutesOptions,
+  { sessions, catalogue, destinations, voice, transcripts }: SessionRoutesOptions,
 ): void {
   app.post('/sessions', async (request, reply) => {
     const session = sessions.create();
@@ -86,6 +88,7 @@ export function registerSessionRoutes(
       pageContext: session.pageContext,
       cart: cart.data,
       catalogueDigest: catalogue.digest(),
+      destinations: destinations?.list(),
       actionTargets: actionTargets.data,
       formResults: formResults.data,
     });

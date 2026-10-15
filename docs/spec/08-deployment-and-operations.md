@@ -104,7 +104,8 @@ repo, edit in the theme editor instead, or push that file manually with `--only`
 
 ### Shopify Admin API — legacy custom app
 
-Read-only: `read_products`, `read_inventory`. The backend does not access the shopper's
+Read-only: `read_products`, `read_inventory`, `read_online_store_pages` (page list for
+`navigate` destinations). The backend does not access the shopper's
 session cart: the browser's Shopify cart cookie is available only to same-origin storefront
 requests. The widget reads the Ajax Cart API and sends a Cart Snapshot with each Call Leg
 request; cart writes also happen in the browser ([section 06](./06-tools-and-actions.md)).

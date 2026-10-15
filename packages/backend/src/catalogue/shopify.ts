@@ -75,6 +75,51 @@ export async function fetchCatalogue(config: ShopifyConfig): Promise<CataloguePr
   return products;
 }
 
+const COLLECTIONS_QUERY = `
+  query Collections {
+    collections(first: ${PAGE_SIZE}, query: "published_status:published") { nodes { handle title } }
+  }`;
+
+/** Needs the `read_content` scope; fetched separately so a missing scope loses only pages. */
+const PAGES_QUERY = `
+  query Pages {
+    pages(first: ${PAGE_SIZE}, query: "published_status:published") { nodes { handle title } }
+  }`;
+
+export interface FetchedDestination {
+  id: string;
+  title: string;
+  url: string;
+}
+
+export async function fetchCollectionDestinations(
+  config: ShopifyConfig,
+): Promise<FetchedDestination[]> {
+  const data = await graphql<{ collections: { nodes: { handle: string; title: string }[] } }>(
+    config,
+    COLLECTIONS_QUERY,
+    {},
+  );
+  return data.collections.nodes.map((c) => ({
+    id: `collection:${c.handle}`,
+    title: c.title,
+    url: `/collections/${c.handle}`,
+  }));
+}
+
+export async function fetchPageDestinations(config: ShopifyConfig): Promise<FetchedDestination[]> {
+  const data = await graphql<{ pages: { nodes: { handle: string; title: string }[] } }>(
+    config,
+    PAGES_QUERY,
+    {},
+  );
+  return data.pages.nodes.map((p) => ({
+    id: `page:${p.handle}`,
+    title: p.title,
+    url: `/pages/${p.handle}`,
+  }));
+}
+
 async function graphql<T>(
   config: ShopifyConfig,
   query: string,

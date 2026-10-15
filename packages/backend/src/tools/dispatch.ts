@@ -11,6 +11,7 @@ import {
 import type { SafeParseReturnType } from 'zod';
 import type { ActionChannel } from '../actions/action-channel.js';
 import type { Catalogue } from '../catalogue/catalogue.js';
+import type { Destinations } from '../destinations/destinations.js';
 import type { SessionStore } from '../session/session-store.js';
 
 /**
@@ -26,6 +27,7 @@ export interface ToolCall {
 
 export interface ToolDeps {
   catalogue: Catalogue;
+  destinations: Pick<Destinations, 'urlFor'>;
   actions: ActionChannel;
   sessions: SessionStore;
 }
@@ -94,12 +96,20 @@ async function showPreview(
 async function dispatchAction(
   name: ActionName,
   call: ToolCall,
-  { actions, sessions, catalogue }: ToolDeps,
+  { actions, sessions, catalogue, destinations }: ToolDeps,
 ): Promise<ToolOutcome> {
   if (!call.sessionId) return { ok: false, error: 'no_session', detail: 'call has no session' };
 
   const action = Action.safeParse({ ...(call.args as object), action: name });
   if (!action.success) return invalidArguments(action);
+
+  if (action.data.action === 'navigate') {
+    const url = destinations.urlFor(action.data.destination_id);
+    if (!url) {
+      return { ok: false, error: 'unknown_destination', detail: action.data.destination_id };
+    }
+    action.data.url = url;
+  }
 
   if (action.data.action === 'open_product') {
     const url = catalogue.urlFor(action.data.product_id);

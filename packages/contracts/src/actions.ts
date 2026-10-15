@@ -24,7 +24,12 @@ export const PreviewTile = z
 export type PreviewTile = z.infer<typeof PreviewTile>;
 
 export const Action = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('navigate'), url: z.string().min(1) }),
+  z.object({
+    action: z.literal('navigate'),
+    destination_id: z.string().min(1),
+    /** Filled by the backend from the Destination list; a guessed URL is how a shopper meets a 404. */
+    url: z.string().startsWith('/').optional(),
+  }),
   z.object({
     action: z.literal('open_product'),
     product_id: ProductId,

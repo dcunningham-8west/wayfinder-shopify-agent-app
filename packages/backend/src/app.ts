@@ -4,8 +4,9 @@ import Fastify from 'fastify';
 import { ActionChannel } from './actions/action-channel.js';
 import { CatalogueIndex } from './catalogue/catalogue-index.js';
 import { LexicalRanker } from './catalogue/lexical-ranker.js';
-import { fetchCatalogue, fetchLiveFacts } from './catalogue/shopify.js';
+import { fetchCatalogue, fetchCollectionDestinations, fetchLiveFacts, fetchPageDestinations } from './catalogue/shopify.js';
 import { loadConfig } from './config.js';
+import { Destinations } from './destinations/destinations.js';
 import { registerActionSocket } from './routes/action-socket.js';
 import { registerSessionRoutes } from './routes/session.js';
 import { toolWebhookPlugin } from './routes/tool-webhook.js';
@@ -25,6 +26,7 @@ export async function buildServer(config = loadConfig()) {
   );
   const sessions = new SessionStore();
   const actions = new ActionChannel();
+  const destinations = new Destinations();
 
   await app.register(websocket);
 
@@ -46,6 +48,7 @@ export async function buildServer(config = loadConfig()) {
   registerSessionRoutes(app, {
     sessions,
     catalogue,
+    destinations,
     voice: config.retellAgentId
       ? new RetellVoiceProvider(config.retellApiKey, config.retellAgentId)
       : undefined,
@@ -54,6 +57,7 @@ export async function buildServer(config = loadConfig()) {
 
   await app.register(toolWebhookPlugin, {
     catalogue,
+    destinations,
     actions,
     sessions,
     retellApiKey: config.retellApiKey,
@@ -68,6 +72,19 @@ export async function buildServer(config = loadConfig()) {
         app.log.info({ products: products.length }, 'catalogue index built');
       })
       .catch((error: unknown) => app.log.error({ error }, 'catalogue index build failed'));
+
+    void Promise.allSettled([
+      fetchCollectionDestinations(shopify),
+      fetchPageDestinations(shopify),
+    ]).then(([collections, pages]) => {
+      const fetched = [collections, pages].flatMap((r) => {
+        if (r.status === 'fulfilled') return r.value;
+        app.log.error({ error: r.reason }, 'destination fetch failed');
+        return [];
+      });
+      destinations.replace(fetched);
+      app.log.info({ destinations: fetched.length }, 'destinations loaded');
+    });
   });
 
   return app;

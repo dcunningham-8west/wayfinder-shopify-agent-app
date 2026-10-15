@@ -86,6 +86,7 @@ function leaveFor(href: string): void {
 export async function executeAction(action: Action): Promise<Outcome> {
   switch (action.action) {
     case 'navigate':
+      if (!action.url) return notFound();
       leaveFor(action.url);
       return { status: 'ok', acked: true };
 

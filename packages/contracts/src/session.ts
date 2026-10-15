@@ -61,6 +61,11 @@ export const SessionState = z
   .strict();
 export type SessionState = z.infer<typeof SessionState>;
 
+export const Destination = z
+  .object({ id: z.string().min(1), title: z.string().min(1) })
+  .strict();
+export type Destination = z.infer<typeof Destination>;
+
 export const SessionSeed = z
   .object({
     session_id: SessionId,
@@ -78,6 +83,8 @@ export const SessionSeed = z
       z.object({ target_id: TargetId, status: z.enum(['success', 'error']) }).strict(),
     ).default([]),
     catalogue_digest: z.string().optional(),
+    /** The only places `navigate` can go. */
+    destinations: z.array(Destination).default([]),
     /** True on every leg after the first; the prompt cannot infer it from the brief's presence. */
     resumed: z.boolean(),
     /** Lets the agent speak naturally about why the page changed. */

@@ -35,6 +35,10 @@ prices, so never invent those. Use cart Actions to change the live cart, never t
 Navigating, filtering, sorting, scrolling and opening a product need no confirmation. Those
 are free to undo. Cart changes are not.
 
+`navigate` only goes to a `destination_id` listed in `wayfinder_seed.destinations`. Match the
+shopper's request to an entry's title. If nothing fits, say the store has no such page; never
+make up an id or a URL.
+
 ## Contact form
 
 The Contact form uses two separate Actions. `fill_form` only prepares visible fields; it does

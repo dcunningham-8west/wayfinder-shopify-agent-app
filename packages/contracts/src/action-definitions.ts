@@ -7,7 +7,9 @@ import { Action, ActionName } from './actions.js';
 
 /** Written for the model: what it does, and what it costs the shopper if it is wrong. */
 export const ACTION_DESCRIPTIONS: Record<ActionName, string> = {
-  navigate: 'Move the shopper to a URL on this store. The page will reload.',
+  navigate:
+    'Move the shopper to a page on this store. destination_id must be an id from ' +
+    'wayfinder_seed.destinations; never invent one. The page will reload.',
   open_product:
     'Open a product page for a product you have already found. Prefer this over navigate ' +
     'when you have a product_id.',
@@ -46,6 +48,7 @@ export function actionSchema(name: ActionName) {
  * part of the agent's vocabulary, so the generated tool definition drops them.
  */
 export const SERVER_FILLED: Partial<Record<ActionName, readonly string[]>> = {
+  navigate: ['url'],
   open_product: ['url'],
   show_in_widget: ['tiles'],
 };
