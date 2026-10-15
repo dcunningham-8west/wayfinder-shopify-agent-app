@@ -21,9 +21,45 @@
   if section.settings.swipe_on_mobile and section.blocks.size > columns_mobile_int
     assign show_mobile_slider = true
   endif
+  assign wayfinder_furniture_heading = section.settings.title | strip_html | replace: '&nbsp;', ' ' | strip
 -%}
 
+{%- capture wayfinder_furniture_json -%}
+  {
+    "kind": "multicolumn",
+    {%- if wayfinder_furniture_heading != blank -%}
+      "label": {{ wayfinder_furniture_heading | json }},
+    {%- endif -%}
+    "columns": [
+      {%- assign wayfinder_has_column = false -%}
+      {%- for block in section.blocks -%}
+        {%- assign wayfinder_column_title = block.settings.title | strip_html | replace: '&nbsp;', ' ' | strip -%}
+        {%- assign wayfinder_cta_label = block.settings.link_label | strip_html | replace: '&nbsp;', ' ' | strip -%}
+        {%- if wayfinder_column_title != blank -%}
+          {%- if wayfinder_has_column -%},{%- endif -%}
+          {
+            "title": {{ wayfinder_column_title | json }}
+            {%- if wayfinder_cta_label != blank -%}
+              ,"cta_label": {{ wayfinder_cta_label | json }}
+            {%- endif -%}
+            {%- if block.settings.link != blank -%}
+              ,"destination": {{ block.settings.link | json }}
+            {%- endif -%}
+          }
+          {%- assign wayfinder_has_column = true -%}
+        {%- endif -%}
+      {%- endfor -%}
+    ]
+  }
+{%- endcapture -%}
+
 <div class='multicolumn color-{{ section.settings.color_scheme }} gradient{% unless section.settings.background_style == 'none' and settings.text_boxes_border_thickness > 0 or settings.text_boxes_shadow_opacity > 0 %} background-{{ section.settings.background_style }}{% endunless %}{% if section.settings.title == blank %} no-heading{% endif %}'>
+  {% render 'wayfinder-section-context',
+    wayfinder_section_id: section.id,
+    wayfinder_kind: 'multicolumn',
+    wayfinder_products: null,
+    wayfinder_furniture_json: wayfinder_furniture_json
+  %}
   <div class='page-width section-{{ section.id }}-padding isolate'>
     {%- unless section.settings.title == blank -%}
       <div class='title-wrapper-with-link title-wrapper--self-padded-mobile title-wrapper--no-top-margin'>

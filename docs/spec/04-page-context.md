@@ -62,6 +62,8 @@ Every page splits in two:
   results. The agent reasons about these by **looking facts up**.
 - **Furniture** — banners, forms, rich text, filters, navigation. The agent may describe
   these structurally and act on them, but **never treats them as product truth**.
+  Multicolumn Furniture carries its heading, column titles, CTA labels and destinations;
+  body copy is omitted.
 
 The split is what lets the agent answer "what's on this page?" without inventing product
 claims from a hero banner's marketing copy.

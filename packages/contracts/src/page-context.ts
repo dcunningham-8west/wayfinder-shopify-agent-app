@@ -25,12 +25,30 @@ export const PageContextProduct = z
 export type PageContextProduct = z.infer<typeof PageContextProduct>;
 
 /** Describable and actionable, never product truth (section 04). */
-export const Furniture = z
-  .object({
-    kind: z.enum(['banner', 'form', 'rich_text', 'filters', 'navigation', 'other']),
-    label: z.string().min(1).optional(),
-  })
-  .strict();
+export const Furniture = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.enum(['banner', 'form', 'rich_text', 'filters', 'navigation', 'other']),
+      label: z.string().min(1).optional(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('multicolumn'),
+      label: z.string().min(1).optional(),
+      columns: z
+        .array(
+          z
+            .object({
+              title: z.string().min(1),
+              cta_label: z.string().min(1).optional(),
+              destination: z.string().min(1).optional(),
+            })
+            .strict(),
+        ),
+    })
+    .strict(),
+]);
 export type Furniture = z.infer<typeof Furniture>;
 
 export const PageSection = z
