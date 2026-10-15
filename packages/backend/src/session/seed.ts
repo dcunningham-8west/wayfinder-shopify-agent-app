@@ -67,6 +67,8 @@ export function promptVariables(seed: SessionSeed): Record<string, string> {
   const { verbatim_tail, resumed, agent_caused_navigation, ...context } = seed;
   const turns = verbatim_tail
     .map((turn) => `${turn.role === 'agent' ? 'You' : 'Shopper'}: ${turn.text}`)
+    // Tool calls are not in the transcript; without this the request that moved them reads as unanswered.
+    .concat(agent_caused_navigation ? ['You: (moved them to this page — that request is done)'] : [])
     .join('\n');
   return {
     wayfinder_continuity: continuityMode(seed),

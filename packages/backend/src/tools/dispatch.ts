@@ -172,7 +172,9 @@ async function performOffer(
   );
   if (outcome.status === 'ok') {
     session.presentation = 'on_page';
-    if (onPage.kind === 'navigate') deps.sessions.markAgentNavigation(sessionId);
+    if (onPage.kind === 'navigate' && !('already_here' in outcome)) {
+      deps.sessions.markAgentNavigation(sessionId);
+    }
   }
   return { ok: true, result: outcome };
 }
@@ -216,7 +218,7 @@ async function dispatchAction(
     action.data.action === 'apply_filter' ||
     action.data.action === 'sort' ||
     action.data.action === 'submit_form';
-  if (outcome.status === 'ok' && causesNavigation) {
+  if (outcome.status === 'ok' && causesNavigation && !('already_here' in outcome)) {
     sessions.markAgentNavigation(call.sessionId);
   }
 

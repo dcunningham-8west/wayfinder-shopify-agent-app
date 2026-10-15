@@ -147,7 +147,7 @@ const CartOutcome = {
 
 const ResultByAction = {
   // Acks only: holding a request open across a page unload would kill it with the page.
-  navigate: ok({ acked: z.literal(true) }),
+  navigate: z.union([ok({ acked: z.literal(true) }), ok({ already_here: z.literal(true) })]),
   open_product: ok({ acked: z.literal(true) }),
   select_variant: ok({
     price: Money.optional(),

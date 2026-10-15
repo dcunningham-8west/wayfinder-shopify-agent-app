@@ -85,10 +85,17 @@ function leaveFor(href: string): void {
 
 export async function executeAction(action: Action): Promise<Outcome> {
   switch (action.action) {
-    case 'navigate':
+    case 'navigate': {
       if (!action.url) return notFound();
+      // Reloading the page the shopper is on starts a new leg that can replay the same request.
+      const target = new URL(action.url, location.origin);
+      const here = new URL(location.href);
+      if (target.pathname === here.pathname && target.search === here.search) {
+        return { status: 'ok', already_here: true };
+      }
       leaveFor(action.url);
       return { status: 'ok', acked: true };
+    }
 
     case 'open_product': {
       // The catalogue URL is authoritative; the on-page link is only a fallback for a
