@@ -29,26 +29,20 @@ function within(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
   });
 }
 
-/**
- * The agent speaks after the Action result, so the line that matters has to survive an LLM
- * turn and a TTS start. Anything shorter leaves during the think.
- */
-const WAIT_FOR_SPEECH_MS = 4_000;
+/** Page-leaving tools speak during execution, so their line is underway or just about to start. */
+const WAIT_FOR_SPEECH_MS = 1_000;
 /**
  * Retell streams speech in chunks, so `agent_stop_talking` fires between sentences too. Gaps
- * within a turn are short; the long wait is only ever for the model, and that is over once the
- * post-Action line has started.
+ * within a turn are short.
  */
 const SUSTAINED_QUIET_MS = 1_200;
-/** Caps the wait when the agent says nothing, or says a great deal. */
+/** Caps the wait when the agent says a great deal. */
 const MAX_TOTAL_MS = 20_000;
 
 export async function whenAgentFinishesSpeaking(): Promise<void> {
   const deadline = Date.now() + MAX_TOTAL_MS;
 
-  // Speech already underway is the pre-Action line; the post-Action one still has to arrive.
-  if (talking) await within(() => !talking, deadline - Date.now());
-  if (!(await within(() => talking, WAIT_FOR_SPEECH_MS))) return;
+  if (!talking && !(await within(() => talking, WAIT_FOR_SPEECH_MS))) return;
 
   while (Date.now() < deadline) {
     if (talking) {

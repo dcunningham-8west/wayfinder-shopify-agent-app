@@ -16,10 +16,18 @@ function required(name: string): string {
 /** A voice turn cannot wait two minutes; the default 120 s is a silence, not a timeout. */
 const TOOL_TIMEOUT_MS = 8_000;
 
-/** Only earned where the shopper is waiting on a lookup they asked for. */
+/** Only earned where the shopper is waiting on a lookup they asked for, or about to leave the page. */
 const EXECUTION_MESSAGE: Partial<Record<string, string>> = {
   search_catalogue: 'Say briefly that you are looking, in no more than four words.',
+  navigate: 'Say in a few words where you are taking them, e.g. "Taking you home."',
+  open_product: 'Say in a few words that you are opening it, naming the product.',
+  apply_filter: 'Say in a few words what you are narrowing to.',
+  sort: 'Say in a few words how you are reordering them.',
+  submit_form: 'Say in a few words that you are sending it.',
 };
+
+/** The page unloads on these, so their line is spoken during execution; one after would be cut off. */
+const LEAVES_PAGE = new Set(['navigate', 'open_product', 'apply_filter', 'sort', 'submit_form']);
 
 function customFunctions(webhookUrl: string) {
   return toolDefinitions().map((tool) => ({
@@ -31,9 +39,9 @@ function customFunctions(webhookUrl: string) {
     timeout_ms: TOOL_TIMEOUT_MS,
     speak_during_execution: EXECUTION_MESSAGE[tool.name] !== undefined,
     execution_message_description: EXECUTION_MESSAGE[tool.name],
-    // A navigate's outcome arrives in the next leg's Seed, so there is nothing to say yet.
-    // Everything else must be spoken, or a failure reaches the shopper as silence.
-    speak_after_execution: tool.name !== 'navigate',
+    // Their outcome arrives in the next leg's Seed. Everything else must be spoken, or a
+    // failure reaches the shopper as silence.
+    speak_after_execution: !LEAVES_PAGE.has(tool.name),
   }));
 }
 

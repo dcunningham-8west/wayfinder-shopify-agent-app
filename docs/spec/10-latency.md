@@ -68,8 +68,8 @@ Cross-referenced from [section 06](./06-tools-and-actions.md).
 | --- | --- | --- |
 | `timeout_ms` | **8,000** | Default is **120,000** — two minutes of a mute agent |
 | `max_retry` | **0** | Worst case is `timeout × (retries+1)`; a doubled wait is worse than a clean failure |
-| `speak_during_execution` | Only where p90 warrants it | Filler is not free — speaking time adds to the turn |
-| `speak_after_execution` | `true` (default) | Except `navigate`, which is fire-and-forget |
+| `speak_during_execution` | Only where p90 warrants it, plus page-leaving Actions | Filler is not free — speaking time adds to the turn. A page-leaving Action speaks *during* so the widget leaves as soon as the line ends, not after a post-result model turn |
+| `speak_after_execution` | `true` (default) | Except page-leaving Actions (`navigate`, `open_product`, `apply_filter`, `sort`, `submit_form`), whose outcome arrives in the next Seed |
 
 Overridable per tool, but only with a recorded reason.
 
