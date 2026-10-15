@@ -70,14 +70,19 @@ test('show_on_page scrolls to a section already showing the results', async () =
   assert.deepEqual(performed[0], { action: 'scroll_to', target_id: 'sec-1' });
 });
 
-test('a labelled section matches a query word', async () => {
+test('a section whose heading matches but renders none of the results is not a scroll target', async () => {
   const { performed, call } = setup(
     { match_quality: 'strong', results: [match('a'), match('b')] },
-    [{ section_id: 'sec-2', kind: 'featured_collection', label: 'Just want candles?', products: [], furniture: [] }],
+    [{ section_id: 'sec-2', kind: 'featured_collection', label: 'Just want candles?', products: [{ product_id: 'z' }], furniture: [] }],
   );
-  await call('search_catalogue', { query: 'candle' });
+  const outcome = await call('search_catalogue', { query: 'dining candles' });
+  assert.deepEqual(outcome.result.offer, { on_page: 'navigate', ask: true });
   await call('show_on_page');
-  assert.deepEqual(performed[0], { action: 'scroll_to', target_id: 'sec-2' });
+  assert.deepEqual(performed[0], {
+    action: 'navigate',
+    destination_id: 'search',
+    url: '/search?q=dining+candles&type=product',
+  });
 });
 
 test('choosing the preview makes later broad searches open the panel at once', async () => {

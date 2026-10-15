@@ -118,23 +118,19 @@ function isBroad(result: SearchCatalogueResult, args: SearchCatalogueArgs): bool
   return result.results.length > 1 && result.match_quality !== 'weak';
 }
 
-/** A section already showing the results beats leaving the page. */
+/** Scroll only to a section rendering a result; a matching heading can hide them behind "View all". */
 function onPageFor(
   session: Session,
   ids: ProductId[],
   args: SearchCatalogueArgs,
 ): StagedResults['onPage'] {
-  const sections = session.pageContext?.sections ?? [];
   const wanted = new Set(ids);
   let best: { id: string; overlap: number } | undefined;
-  for (const s of sections) {
+  for (const s of session.pageContext?.sections ?? []) {
     const overlap = s.products.filter((p) => wanted.has(p.product_id)).length;
     if (overlap > 0 && (!best || overlap > best.overlap)) best = { id: s.section_id, overlap };
   }
-  const queryWords = words(args.query);
-  const labelled = sections.find((s) => s.label && [...words(s.label)].some((w) => queryWords.has(w)));
-  const target = best?.id ?? labelled?.section_id;
-  if (target) return { kind: 'scroll', target_id: target as TargetId };
+  if (best) return { kind: 'scroll', target_id: best.id as TargetId };
 
   if (args.facets && args.facets.length > 0) {
     const params = new URLSearchParams();
@@ -145,17 +141,6 @@ function onPageFor(
   }
   const params = new URLSearchParams({ q: args.query, type: 'product' });
   return { kind: 'navigate', destination_id: 'search', url: `/search?${params}` };
-}
-
-/** Crude singular folding so "candles" meets "candle"; short words are noise. */
-function words(text: string): Set<string> {
-  return new Set(
-    text
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((w) => w.length > 3)
-      .map((w) => w.replace(/s$/, '')),
-  );
 }
 
 /** Resolves the arg-less Offer actions against what the last search staged. */

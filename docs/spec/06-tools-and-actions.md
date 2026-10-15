@@ -218,8 +218,9 @@ Session State; the agent never sees or sends them.
 
 - **"Show me now"** → `show_preview`.
 - **"Take me there"** → `show_on_page`, which the backend resolves to `scroll_to` when a
-  section on the current page holds matching products (overlapping product ids, else a label
-  sharing a query word). Otherwise `navigate` to a **filtered collection URL**
+  section on the current page **renders** at least one of the results (overlapping product
+  ids; a matching heading is not enough, since a carousel shows only part of its collection).
+  Otherwise `navigate` to a **filtered collection URL**
   (`/collections/all?filter.p.m.custom.<facet>=<value>`, as `apply_filter` builds), or to
   `/search?q=` when the search had no facets.
 - **The shopper already said how** ("show me the fruity ones", "take me to the candles") →
