@@ -1,7 +1,7 @@
 ---
 id: A4
 title: Theme avatar setting
-state: open
+state: closed
 assignee:
 blocked_by: []
 ---

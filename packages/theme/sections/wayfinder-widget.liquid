@@ -9,6 +9,7 @@
 <script>
   window.__WAYFINDER__ = {
     backendUrl: {{ section.settings.backend_url | default: 'https://wayfinder-voice-bot-backend.onrender.com' | json }},
+    avatar: {{ section.settings.avatar_enabled | json }},
   };
 </script>
 
@@ -160,6 +161,13 @@
       "id": "start_call_label",
       "label": "Start call button label",
       "default": "START CALL"
+    },
+    {
+      "type": "checkbox",
+      "id": "avatar_enabled",
+      "label": "Enable avatar",
+      "info": "Shows a lip-synced face during calls. Needs Simli configured on the backend.",
+      "default": false
     }
   ]
 }

@@ -14,6 +14,7 @@ import { setAgentTalking } from './speech.js';
 import { mountUi } from './ui.js';
 import { TIMING, type PreviewTile } from '@wayfinder/contracts';
 import type { VoiceClient } from './voice.js';
+import type { AvatarController } from './avatar.js';
 
 const REFUSALS: Record<string, string> = {
   rate_limited: 'ONE MOMENT',
@@ -28,6 +29,27 @@ function warn(message: string, detail?: unknown): void {
   console.warn(`[wayfinder] ${message}`, detail ?? '');
 }
 
+// Bare portrait for A5; section 13's visuals land in A6.
+function avatarElements(root: HTMLElement): { video: HTMLVideoElement; audio: HTMLAudioElement } {
+  let portrait = root.querySelector<HTMLElement>('.avatar-portrait');
+  if (!portrait) {
+    portrait = document.createElement('div');
+    portrait.className = 'avatar-portrait';
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    const audio = document.createElement('audio');
+    audio.muted = true;
+    portrait.append(video, audio);
+    root.querySelector('.panel-header')?.after(portrait);
+  }
+  return {
+    video: portrait.querySelector('video')!,
+    audio: portrait.querySelector('audio')!,
+  };
+}
+
 function boot(): void {
   const root = document.querySelector<HTMLElement>('.nav-voice-container');
   if (!root) return;
@@ -39,6 +61,7 @@ function boot(): void {
   const socket = new ActionSocket(config);
 
   let voice: VoiceClient | undefined;
+  let avatar: AvatarController | undefined;
   let starting = false;
 
   // The backend relays Retell's live transcript; the SDK no longer delivers it to the page.
@@ -57,6 +80,7 @@ function boot(): void {
         ui.setStatus('LISTENING');
       },
       onEnded: () => {
+        avatar?.stop();
         ui.setLive(false);
         preview?.hide();
         socket.close();
@@ -68,6 +92,29 @@ function boot(): void {
     });
     ui.onMuteChange((muted) => voice?.setAgentMuted(muted));
     return voice;
+  }
+
+  // Simli and its WebRTC stack load only for a leg that was actually granted a face.
+  async function loadAvatar(): Promise<AvatarController> {
+    if (avatar) return avatar;
+    const { AvatarController } = await import('./avatar.js');
+    avatar = new AvatarController({
+      elements: () => avatarElements(root!),
+      createSimli: async (token, video, audio) => {
+        const { SimliClient } = await import('simli-client');
+        return new SimliClient(token, video, audio, null, undefined, 'livekit', 'websockets', undefined, 800);
+      },
+      agentTrack: () => voice?.agentAudioTrack(),
+      onState: (state) => root!.setAttribute('data-avatar', state),
+    });
+    return avatar;
+  }
+
+  function startAvatar(token: string | undefined): void {
+    if (!token) return;
+    void loadAvatar()
+      .then((controller) => controller.start(token))
+      .catch((error: unknown) => warn('avatar load failed', error));
   }
 
   async function start(reconnecting = false): Promise<'rate_limited' | undefined> {
@@ -119,6 +166,7 @@ function boot(): void {
       } finally {
         clearTimeout(timer);
       }
+      startAvatar(leg.avatarToken);
     } catch (error) {
       warn(reconnecting ? 'reconnect failed' : 'start failed', error);
       voice?.stop();
@@ -171,6 +219,7 @@ function boot(): void {
 
   ui.onStart(() => void start());
   ui.onEnd(() => {
+    avatar?.stop();
     voice?.stop();
     socket.close();
     preview?.hide();
@@ -183,6 +232,7 @@ function boot(): void {
   });
 
   window.addEventListener('pagehide', () => {
+    avatar?.stop();
     voice?.stop();
     socket.close();
   });

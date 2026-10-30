@@ -3,10 +3,12 @@ import {
   CartSnapshot,
   FormSubmissionResults,
   PageContext,
+  type AvatarTokenResponse,
   type CallLegResponse,
   type SessionId,
 } from '@wayfinder/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { AvatarMinter } from '../avatar/avatar-minter.js';
 import type { Catalogue } from '../catalogue/catalogue.js';
 import type { Destinations } from '../destinations/destinations.js';
 import { assembleSeed, continuityMode } from '../session/seed.js';
@@ -21,11 +23,13 @@ export interface SessionRoutesOptions {
   /** Absent until the Retell agent exists; the endpoint says so rather than pretending. */
   voice?: VoiceProvider;
   transcripts?: TranscriptRelay;
+  /** Absent when Simli isn't configured; the avatar is then off, not broken. */
+  avatar?: Pick<AvatarMinter, 'mint'>;
 }
 
 export function registerSessionRoutes(
   app: FastifyInstance,
-  { sessions, catalogue, destinations, voice, transcripts }: SessionRoutesOptions,
+  { sessions, catalogue, destinations, voice, transcripts, avatar }: SessionRoutesOptions,
 ): void {
   app.post('/sessions', async (request, reply) => {
     const session = sessions.create();
@@ -50,6 +54,23 @@ export function registerSessionRoutes(
     return reply.code(204).send();
   });
 
+  app.post('/sessions/:id/avatar-token', async (request, reply) => {
+    const session = authorise(request, sessions);
+    if (!session) return reply.code(404).send({ error: 'unknown_session' });
+    if (!session.currentLegId) return reply.code(409).send({ error: 'no_live_leg' });
+    if (!avatar) return reply.code(503).send({ error: 'avatar_not_configured' });
+    if (!sessions.takeAvatarTokenSlot(session)) {
+      return reply.code(429).send({ error: 'avatar_token_rate_limited' });
+    }
+
+    const minted = await avatar.mint();
+    if ('error' in minted) {
+      request.log.warn({ session_id: session.id, error: minted.error }, 'avatar mint failed');
+      return reply.code(503).send({ error: 'avatar_unavailable' });
+    }
+    return minted.grant satisfies AvatarTokenResponse;
+  });
+
   app.post('/sessions/:id/call-legs', async (request, reply) => {
     const session = authorise(request, sessions);
     if (!session) {
@@ -66,6 +87,7 @@ export function registerSessionRoutes(
       action_targets?: unknown;
       form_results?: unknown;
       cart?: unknown;
+      avatar?: unknown;
     };
     const pageContext = PageContext.safeParse(body?.page_context);
     const actionTargets = ActionTargetIds.safeParse(body?.action_targets ?? []);
@@ -94,7 +116,13 @@ export function registerSessionRoutes(
       formResults: formResults.data,
     });
 
-    const call = await voice.createWebCall(seed);
+    const [call, minted] = await Promise.all([
+      voice.createWebCall(seed),
+      avatar && body.avatar === true ? avatar.mint() : undefined,
+    ]);
+    if (minted && 'error' in minted) {
+      request.log.warn({ session_id: session.id, call_leg_id: callLegId, error: minted.error }, 'avatar mint failed');
+    }
     session.agentCausedNavigation = false;
     transcripts?.follow(session, callLegId, call.callId);
 
@@ -117,6 +145,7 @@ export function registerSessionRoutes(
       call_id: call.callId,
       transport: call.transport,
       ice_servers: call.iceServers as CallLegResponse['ice_servers'],
+      ...(minted && 'grant' in minted ? { avatar: minted.grant } : {}),
     } satisfies CallLegResponse);
   });
 }

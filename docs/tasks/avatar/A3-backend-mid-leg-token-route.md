@@ -1,7 +1,7 @@
 ---
 id: A3
 title: Backend mid-leg avatar token route
-state: open
+state: closed
 assignee:
 blocked_by: [A2]
 ---

@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@wayfinder/contracts": "*",
-    "retell-client-js-sdk": "^3.0.2"
+    "retell-client-js-sdk": "^3.0.2",
+    "simli-client": "3.2.0"
   },
   "devDependencies": {
     "esbuild": "^0.24.0",

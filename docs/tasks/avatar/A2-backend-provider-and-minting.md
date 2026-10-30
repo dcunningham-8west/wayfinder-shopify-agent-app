@@ -1,7 +1,7 @@
 ---
 id: A2
 title: Backend avatar provider and call-leg minting
-state: open
+state: closed
 assignee:
 blocked_by: [A1]
 ---

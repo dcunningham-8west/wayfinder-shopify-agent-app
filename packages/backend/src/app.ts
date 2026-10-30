@@ -1,6 +1,8 @@
 import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import Fastify from 'fastify';
+import { AvatarMinter } from './avatar/avatar-minter.js';
+import { SimliAvatarProvider } from './avatar/simli-provider.js';
 import { ActionChannel } from './actions/action-channel.js';
 import { CatalogueIndex } from './catalogue/catalogue-index.js';
 import { LexicalRanker } from './catalogue/lexical-ranker.js';
@@ -53,6 +55,9 @@ export async function buildServer(config = loadConfig()) {
       ? new RetellVoiceProvider(config.retellApiKey, config.retellAgentId)
       : undefined,
     transcripts: new TranscriptRelay(config.retellApiKey, sessions, actions, app.log),
+    avatar: config.simli
+      ? new AvatarMinter(new SimliAvatarProvider(config.simli.apiKey, config.simli.faceId))
+      : undefined,
   });
 
   await app.register(toolWebhookPlugin, {

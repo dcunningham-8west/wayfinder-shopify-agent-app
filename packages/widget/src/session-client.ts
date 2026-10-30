@@ -16,6 +16,7 @@ import type { WidgetConfig } from './config.js';
 const STORAGE_KEY = 'wayfinder:session';
 const AGENT_NAVIGATION_KEY = 'wayfinder:agent-navigation';
 const AGENT_NAVIGATION_TTL_MS = 30_000;
+export const AVATAR_HIDDEN_KEY = 'wayfinder:avatar-hidden';
 
 export interface SessionHandle {
   id: string;
@@ -28,6 +29,8 @@ export interface CallLeg {
   callId: string;
   transport: string;
   iceServers: RTCIceServer[];
+  /** Absent means this leg is voice-only. */
+  avatarToken?: string;
 }
 
 export type LegRefusal = 'rate_limited' | 'voice_not_configured' | 'unknown_session' | 'failed';
@@ -58,6 +61,14 @@ export function takeAgentNavigationMarker(): boolean {
     const markedAt = Number(raw);
     const age = Date.now() - markedAt;
     return Number.isFinite(markedAt) && age >= 0 && age <= AGENT_NAVIGATION_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+export function avatarHidden(): boolean {
+  try {
+    return sessionStorage.getItem(AVATAR_HIDDEN_KEY) === '1';
   } catch {
     return false;
   }
@@ -136,6 +147,7 @@ export class SessionClient {
         action_targets: actionTargets,
         form_results: formResults,
         cart,
+        ...(this.config.avatar && !avatarHidden() ? { avatar: true } : {}),
       } satisfies CallLegRequest),
     });
 
@@ -156,6 +168,7 @@ export class SessionClient {
       callId: body.call_id,
       transport: body.transport,
       iceServers: body.ice_servers as RTCIceServer[],
+      avatarToken: body.avatar?.session_token,
     };
   }
 

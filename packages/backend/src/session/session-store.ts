@@ -12,6 +12,8 @@ import type {
 } from '@wayfinder/contracts';
 import { MAX_SESSIONS_IN_MEMORY, REFERENT_SET_CAPACITY, TIMING } from '@wayfinder/contracts';
 
+const AVATAR_TOKEN_MIN_INTERVAL_MS = 10_000;
+
 /**
  * Section 03 and ticket 014: the backend stores nothing at rest. A Session is a process-local
  * object with an idle TTL, and losing one is a defined state rather than an error.
@@ -32,6 +34,7 @@ export interface Session {
   /** Where the current leg's turns begin in `transcript`; earlier turns belong to past legs. */
   legTranscriptStart: number;
   lastLegCreatedAt?: number;
+  lastAvatarTokenAt?: number;
   lastSeenAt: number;
   /** The last search's results awaiting the shopper's answer to the Offer. */
   staged?: StagedResults;
@@ -152,6 +155,14 @@ export class SessionStore {
 
   get size(): number {
     return this.#sessions.size;
+  }
+
+  /** Takes the slot when allowed: each mid-leg token costs a Simli session start. */
+  takeAvatarTokenSlot(session: Session): boolean {
+    const last = session.lastAvatarTokenAt;
+    if (last !== undefined && this.now() - last < AVATAR_TOKEN_MIN_INTERVAL_MS) return false;
+    session.lastAvatarTokenAt = this.now();
+    return true;
   }
 
   #isExpired(session: Session): boolean {

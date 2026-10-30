@@ -72,4 +72,10 @@ export class VoiceClient {
   stop(): void {
     this.#client.stopCall();
   }
+
+  /** For the avatar's lip sync; reaches into the gateway transport's private peer connection. */
+  agentAudioTrack(): MediaStreamTrack | undefined {
+    const pc = (this.#client as unknown as { transport?: { pc?: RTCPeerConnection } }).transport?.pc;
+    return pc?.getReceivers().find((r) => r.track?.kind === 'audio')?.track;
+  }
 }
