@@ -1,7 +1,7 @@
 ---
 id: A7
 title: Widget avatar edge cases
-state: open
+state: closed
 assignee:
 blocked_by: [A3, A6]
 ---
