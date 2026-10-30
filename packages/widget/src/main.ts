@@ -44,25 +44,12 @@ function releaseSimliAudioTap(simli: object): void {
   internals.audioContext?.close().catch(() => {});
 }
 
-// Bare portrait for A5; section 13's visuals land in A6.
+// The portrait is theme markup, rendered only when the merchant enabled the avatar.
 function avatarElements(root: HTMLElement): { video: HTMLVideoElement; audio: HTMLAudioElement } {
-  let portrait = root.querySelector<HTMLElement>('.avatar-portrait');
-  if (!portrait) {
-    portrait = document.createElement('div');
-    portrait.className = 'avatar-portrait';
-    const video = document.createElement('video');
-    video.autoplay = true;
-    video.muted = true;
-    video.playsInline = true;
-    const audio = document.createElement('audio');
-    audio.muted = true;
-    portrait.append(video, audio);
-    root.querySelector('.panel-header')?.after(portrait);
-  }
-  return {
-    video: portrait.querySelector('video')!,
-    audio: portrait.querySelector('audio')!,
-  };
+  const video = root.querySelector<HTMLVideoElement>('.avatar-portrait video');
+  const audio = root.querySelector<HTMLAudioElement>('.avatar-portrait audio');
+  if (!video || !audio) throw new Error('no avatar portrait in the theme');
+  return { video, audio };
 }
 
 function boot(): void {
@@ -133,10 +120,21 @@ function boot(): void {
         };
       },
       agentTrack: () => voice?.agentAudioTrack(),
-      onState: (state) => root!.setAttribute('data-avatar', state),
+      onState: (state) => {
+        root!.setAttribute('data-avatar', state);
+        // Dropping the dead stream brings back the poster still, so "failed" greys the face.
+        if (state === 'failed' || state === 'off') {
+          const video = root!.querySelector<HTMLVideoElement>('.avatar-portrait video');
+          if (video) video.srcObject = null;
+        }
+      },
     });
     return avatar;
   }
+
+  ui.onAvatarHiddenChange((hidden) => {
+    if (hidden) avatar?.stop();
+  });
 
   function startAvatar(token: string | undefined): void {
     if (!token) return;

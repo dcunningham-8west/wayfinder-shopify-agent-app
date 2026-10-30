@@ -3,6 +3,8 @@
  * work ported, the behaviour did not.
  */
 
+import { AVATAR_HIDDEN_KEY } from './session-client.js';
+
 export interface WidgetUi {
   setLive(live: boolean): void;
   setStatus(text: string): void;
@@ -12,6 +14,8 @@ export interface WidgetUi {
   onEnd(handler: () => void): void;
   /** Called now with the remembered state, then on every toggle. */
   onMuteChange(handler: (muted: boolean) => void): void;
+  /** Called now with the remembered state, then on every toggle. */
+  onAvatarHiddenChange(handler: (hidden: boolean) => void): void;
 }
 
 /** Per tab, so a preference survives the reconnect on every page load. */
@@ -75,6 +79,13 @@ export function mountUi(root: HTMLElement): WidgetUi {
     muteHandler?.(muted);
   });
 
+  let avatarHandler: ((hidden: boolean) => void) | undefined;
+  let avatarHidden = false;
+  bindToggle(query('.avatar-btn'), AVATAR_HIDDEN_KEY, ['Hide avatar', 'Show avatar'], (off) => {
+    avatarHidden = off;
+    avatarHandler?.(avatarHidden);
+  });
+
   // Any scroll minifies: the shopper is reading the page, not us.
   window.addEventListener('scroll', () => root.classList.contains('is-active') && minimise(), {
     passive: true,
@@ -122,6 +133,10 @@ export function mountUi(root: HTMLElement): WidgetUi {
     onMuteChange(handler) {
       muteHandler = handler;
       handler(muted);
+    },
+    onAvatarHiddenChange(handler) {
+      avatarHandler = handler;
+      handler(avatarHidden);
     },
   };
 }

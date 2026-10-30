@@ -57,6 +57,22 @@
       </div>
     </div>
 
+    {%- if section.settings.avatar_enabled -%}
+      <div class='avatar-portrait'>
+        <video
+          autoplay
+          muted
+          playsinline
+          {% if section.settings.avatar_still %}
+            poster='{{ section.settings.avatar_still | image_url: width: 640 }}'
+          {% endif %}
+        ></video>
+        <audio muted></audio>
+        <span class='avatar-spinner'></span>
+        <span class='avatar-label'></span>
+      </div>
+    {%- endif -%}
+
     <div class='waveform-container'>
       {%- for i in (1..8) -%}
         <span class='wave-bar'></span>
@@ -120,6 +136,33 @@
             <line x1='2' y1='2' x2='22' y2='22' />
           </svg>
         </button>
+        {%- if section.settings.avatar_enabled -%}
+          <button class='control-btn avatar-btn' type='button' aria-label='Hide avatar' aria-pressed='false'>
+            <svg
+              class='icon-on'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              stroke-width='2'
+              stroke-linecap='round'
+            >
+              <circle cx='12' cy='8' r='4' />
+              <path d='M4 21a8 8 0 0 1 16 0' />
+            </svg>
+            <svg
+              class='icon-off'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              stroke-width='2'
+              stroke-linecap='round'
+            >
+              <circle cx='12' cy='8' r='4' />
+              <path d='M4 21a8 8 0 0 1 16 0' />
+              <line x1='2' y1='2' x2='22' y2='22' />
+            </svg>
+          </button>
+        {%- endif -%}
       </div>
       <div class='action-buttons-group'>
         <button class='toggle-call-btn is-active' type='button'>END CALL</button>
@@ -168,6 +211,12 @@
       "label": "Enable avatar",
       "info": "Shows a lip-synced face during calls. Needs Simli configured on the backend.",
       "default": false
+    },
+    {
+      "type": "image_picker",
+      "id": "avatar_still",
+      "label": "Avatar still",
+      "info": "Shown while the avatar connects. Use a square screenshot of the Simli face."
     }
   ]
 }

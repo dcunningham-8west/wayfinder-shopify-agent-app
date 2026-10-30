@@ -95,4 +95,12 @@ test('stop with nothing running is harmless', () => {
   const h = harness();
   h.controller.stop();
   assert.deepEqual(h.simli.calls, []);
+  assert.deepEqual(h.states, []);
+});
+
+test('stop clears a failed avatar back to off', async () => {
+  const h = harness({ startRejects: true });
+  await h.controller.start('tok');
+  h.controller.stop();
+  assert.deepEqual(h.states, ['starting', 'failed', 'off']);
 });

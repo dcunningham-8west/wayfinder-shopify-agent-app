@@ -19,13 +19,14 @@ export interface AvatarDeps {
 export class AvatarController {
   #simli: SimliLike | undefined;
   #generation = 0;
+  #state: AvatarState = 'off';
 
   constructor(private readonly deps: AvatarDeps) {}
 
   async start(token: string): Promise<void> {
-    this.stop();
-    const generation = ++this.#generation;
-    this.deps.onState('starting');
+    this.#release();
+    const generation = this.#generation;
+    this.#setState('starting');
     try {
       const { video, audio } = this.deps.elements();
       audio.muted = true;
@@ -41,20 +42,24 @@ export class AvatarController {
       const track = this.deps.agentTrack();
       if (!track) throw new Error('no agent audio track');
       simli.listenToMediastreamTrack(track);
-      this.deps.onState('live');
+      this.#setState('live');
     } catch (error) {
       this.#fail(generation, error);
     }
   }
 
   stop(): void {
+    this.#release();
+    // Also clears a failed portrait: failure lasts only for its leg.
+    this.#setState('off');
+  }
+
+  #release(): void {
     this.#generation += 1;
     const simli = this.#simli;
     this.#simli = undefined;
-    if (!simli) return;
     // Fire-and-forget: pagehide won't wait, and maxIdleTime is the backstop.
-    simli.stop().catch(() => {});
-    this.deps.onState('off');
+    simli?.stop().catch(() => {});
   }
 
   #fail(generation: number, detail: unknown): void {
@@ -63,6 +68,12 @@ export class AvatarController {
     const simli = this.#simli;
     this.#simli = undefined;
     simli?.stop().catch(() => {});
-    this.deps.onState('failed');
+    this.#setState('failed');
+  }
+
+  #setState(state: AvatarState): void {
+    if (state === this.#state) return;
+    this.#state = state;
+    this.deps.onState(state);
   }
 }

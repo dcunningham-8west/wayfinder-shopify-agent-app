@@ -288,21 +288,77 @@
   gap: 6px;
   height: 48px;
 }
-/* Interim sizing until A6's portrait visuals. */
+/* Avatar portrait (section 13): one size in every shown state, so nothing jumps. */
 .nav-voice-container .voice-dropdown-panel .avatar-portrait {
+  display: none;
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 40%, #3b4148, #15181c);
+}
+.nav-voice-container:is([data-avatar='starting'], [data-avatar='live'], [data-avatar='failed']) .avatar-portrait {
+  display: block;
+}
+.nav-voice-container:is([data-avatar='starting'], [data-avatar='live'], [data-avatar='failed']) .waveform-container {
+  display: none;
 }
 .nav-voice-container .voice-dropdown-panel .avatar-portrait video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: filter 0.3s ease, opacity 0.3s ease;
 }
-.nav-voice-container .voice-dropdown-panel .avatar-portrait audio {
+.nav-voice-container .voice-dropdown-panel .avatar-portrait audio,
+.nav-voice-container .voice-dropdown-panel .avatar-portrait .avatar-spinner,
+.nav-voice-container .voice-dropdown-panel .avatar-portrait .avatar-label {
   display: none;
+}
+.nav-voice-container .voice-dropdown-panel .avatar-portrait .avatar-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 3px 7px;
+  border-radius: 10px;
+}
+.nav-voice-container .voice-dropdown-panel .avatar-portrait .avatar-spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: wayfinder-avatar-spin 0.9s linear infinite;
+}
+@keyframes wayfinder-avatar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.nav-voice-container[data-avatar='starting'] .avatar-portrait video {
+  filter: grayscale(0.6) blur(1.5px);
+}
+.nav-voice-container[data-avatar='starting'] .avatar-portrait .avatar-spinner,
+.nav-voice-container:is([data-avatar='starting'], [data-avatar='failed']) .avatar-portrait .avatar-label {
+  display: block;
+}
+.nav-voice-container[data-avatar='starting'] .avatar-portrait .avatar-label::before {
+  content: 'CONNECTING';
+}
+.nav-voice-container[data-avatar='failed'] .avatar-portrait video {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+.nav-voice-container[data-avatar='failed'] .avatar-portrait .avatar-label::before {
+  content: 'VOICE ONLY';
 }
 .nav-voice-container .voice-dropdown-panel .waveform-container .wave-bar {
   width: 4px;
