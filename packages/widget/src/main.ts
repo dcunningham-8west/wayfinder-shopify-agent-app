@@ -101,7 +101,11 @@ function boot(): void {
     avatar = new AvatarController({
       elements: () => avatarElements(root!),
       createSimli: async (token, video, audio) => {
-        const { SimliClient } = await import('simli-client');
+        // simli-client is CommonJS; esbuild's split chunk exposes it only as `default`.
+        const mod = (await import('simli-client')) as typeof import('simli-client') & {
+          default?: typeof import('simli-client');
+        };
+        const { SimliClient } = mod.default ?? mod;
         return new SimliClient(token, video, audio, null, undefined, 'livekit', 'websockets', undefined, 800);
       },
       agentTrack: () => voice?.agentAudioTrack(),
