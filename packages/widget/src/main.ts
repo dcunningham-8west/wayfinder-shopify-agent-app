@@ -29,6 +29,21 @@ function warn(message: string, detail?: unknown): void {
   console.warn(`[wayfinder] ${message}`, detail ?? '');
 }
 
+// simli-client 3.2.0's stop() leaves the tap's audio graph posting into a closed socket.
+function releaseSimliAudioTap(simli: object): void {
+  const internals = simli as {
+    sourceNode?: AudioNode | null;
+    audioWorklet?: AudioWorkletNode | null;
+    audioContext?: AudioContext;
+  };
+  internals.sourceNode?.disconnect();
+  if (internals.audioWorklet) {
+    internals.audioWorklet.port.onmessage = null;
+    internals.audioWorklet.disconnect();
+  }
+  internals.audioContext?.close().catch(() => {});
+}
+
 // Bare portrait for A5; section 13's visuals land in A6.
 function avatarElements(root: HTMLElement): { video: HTMLVideoElement; audio: HTMLAudioElement } {
   let portrait = root.querySelector<HTMLElement>('.avatar-portrait');
@@ -105,8 +120,17 @@ function boot(): void {
         const mod = (await import('simli-client')) as typeof import('simli-client') & {
           default?: typeof import('simli-client');
         };
-        const { SimliClient } = mod.default ?? mod;
-        return new SimliClient(token, video, audio, null, undefined, 'livekit', 'websockets', undefined, 800);
+        const { SimliClient, LogLevel } = mod.default ?? mod;
+        const simli = new SimliClient(token, video, audio, null, LogLevel.ERROR, 'livekit', 'websockets', undefined, 800);
+        return {
+          on: (event, callback) => simli.on(event, callback),
+          start: () => simli.start(),
+          listenToMediastreamTrack: (track) => simli.listenToMediastreamTrack(track),
+          stop: () => {
+            releaseSimliAudioTap(simli);
+            return simli.stop();
+          },
+        };
       },
       agentTrack: () => voice?.agentAudioTrack(),
       onState: (state) => root!.setAttribute('data-avatar', state),
