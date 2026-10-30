@@ -120,6 +120,7 @@ function boot(): void {
         };
       },
       agentTrack: () => voice?.agentAudioTrack(),
+      fetchToken: () => sessions.avatarToken(),
       onState: (state) => {
         root!.setAttribute('data-avatar', state);
         // Dropping the dead stream brings back the poster still, so "failed" greys the face.
@@ -133,7 +134,12 @@ function boot(): void {
   }
 
   ui.onAvatarHiddenChange((hidden) => {
-    if (hidden) avatar?.stop();
+    if (hidden) return avatar?.stop();
+    if (!config.avatar || !voice?.live || root!.getAttribute('data-avatar') === 'live') return;
+    void sessions
+      .avatarToken()
+      .then(startAvatar)
+      .catch((error: unknown) => warn('avatar token failed', error));
   });
 
   function startAvatar(token: string | undefined): void {

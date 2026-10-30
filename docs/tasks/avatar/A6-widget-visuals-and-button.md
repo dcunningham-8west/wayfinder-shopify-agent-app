@@ -1,7 +1,7 @@
 ---
 id: A6
 title: Widget avatar visuals and button
-state: open
+state: closed
 assignee:
 blocked_by: [A5]
 ---

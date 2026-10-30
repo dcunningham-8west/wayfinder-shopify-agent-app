@@ -13,7 +13,7 @@ const { outputFiles } = await build({
   write: false,
 });
 
-function fakeSimli({ startRejects = false } = {}) {
+function fakeSimli({ startRejects = false, rejections = startRejects ? Infinity : 0 } = {}) {
   const handlers = {};
   const simli = {
     calls: [],
@@ -21,7 +21,7 @@ function fakeSimli({ startRejects = false } = {}) {
     emit: (event, data) => handlers[event]?.(data),
     start: async () => {
       simli.calls.push('start');
-      if (startRejects) throw new Error('slot held');
+      if (rejections-- > 0) throw new Error('slot held');
     },
     stop: async () => { simli.calls.push('stop'); },
     listenToMediastreamTrack: (track) => { simli.calls.push(['listen', track]); },
@@ -29,8 +29,8 @@ function fakeSimli({ startRejects = false } = {}) {
   return simli;
 }
 
-function harness(simliOptions) {
-  const context = { module: { exports: {} }, require: nodeRequire, process, Buffer };
+function harness(simliOptions, { token = 'tok2' } = {}) {
+  const context = { module: { exports: {} }, require: nodeRequire, process, Buffer, setTimeout, console };
   context.exports = context.module.exports;
   vm.runInNewContext(outputFiles[0].text, context);
 
@@ -47,6 +47,8 @@ function harness(simliOptions) {
     },
     agentTrack: () => 'agent-track',
     onState: (state) => states.push(state),
+    fetchToken: async () => token ?? undefined,
+    retryDelayMs: 0,
   });
   return { controller, simli, audio, video, states, created };
 }
@@ -103,4 +105,34 @@ test('stop clears a failed avatar back to off', async () => {
   await h.controller.start('tok');
   h.controller.stop();
   assert.deepEqual(h.states, ['starting', 'failed', 'off']);
+});
+
+test('a refused start retries once with a fresh token', async () => {
+  const h = harness({ rejections: 1 });
+  await h.controller.start('tok');
+  assert.deepEqual(h.created.map((c) => c.token), ['tok', 'tok2']);
+  assert.deepEqual(h.states, ['starting', 'live']);
+});
+
+test('a second refusal leaves the avatar failed', async () => {
+  const h = harness({ startRejects: true });
+  await h.controller.start('tok');
+  assert.equal(h.created.length, 2);
+  assert.deepEqual(h.states, ['starting', 'failed']);
+});
+
+test('no fresh token means failed without a second attempt', async () => {
+  const h = harness({ rejections: 1 }, { token: null });
+  await h.controller.start('tok');
+  assert.equal(h.created.length, 1);
+  assert.deepEqual(h.states, ['starting', 'failed']);
+});
+
+test('simli ending the session turns the avatar off', async () => {
+  const h = harness();
+  await h.controller.start('tok');
+  h.simli.emit('stop');
+  assert.deepEqual(h.states, ['starting', 'live', 'off']);
+  await h.controller.start('tok3');
+  assert.equal(h.states.at(-1), 'live');
 });

@@ -1,4 +1,5 @@
 import type {
+  AvatarTokenResponse,
   CallLegRequest,
   CallLegResponse,
   CartSnapshot,
@@ -170,6 +171,19 @@ export class SessionClient {
       iceServers: body.ice_servers as RTCIceServer[],
       avatarToken: body.avatar?.session_token,
     };
+  }
+
+  /** Undefined covers every refusal: the leg simply carries on voice-only. */
+  async avatarToken(): Promise<string | undefined> {
+    const handle = this.#handle;
+    if (!handle) return undefined;
+    const response = await fetch(`${this.config.backendUrl}/sessions/${handle.id}/avatar-token`, {
+      method: 'POST',
+      headers: { 'x-wayfinder-session-token': handle.token },
+    });
+    if (!response.ok) return undefined;
+    const body = (await response.json()) as AvatarTokenResponse;
+    return body.session_token;
   }
 
   forget(): void {
