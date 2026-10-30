@@ -29,6 +29,8 @@ export class AvatarController {
     try {
       const { video, audio } = this.deps.elements();
       audio.muted = true;
+      // LiveKit's attach() resets `muted` to false; it never touches volume.
+      audio.volume = 0;
       const simli = await this.deps.createSimli(token, video, audio);
       if (generation !== this.#generation) return void simli.stop().catch(() => {});
       this.#simli = simli;

@@ -35,7 +35,7 @@ function harness(simliOptions) {
   vm.runInNewContext(outputFiles[0].text, context);
 
   const simli = fakeSimli(simliOptions);
-  const audio = { muted: false };
+  const audio = { muted: false, volume: 1 };
   const video = {};
   const states = [];
   const created = [];
@@ -59,10 +59,11 @@ test('starting with a token starts simli, then taps the agent track', async () =
   assert.deepEqual(h.states, ['starting', 'live']);
 });
 
-test("simli's audio element is muted so voice stays on Retell", async () => {
+test("simli's audio element is silenced so voice stays on Retell", async () => {
   const h = harness();
   await h.controller.start('tok');
   assert.equal(h.audio.muted, true);
+  assert.equal(h.audio.volume, 0);
   assert.equal(h.created[0].a, h.audio);
 });
 

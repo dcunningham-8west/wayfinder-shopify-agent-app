@@ -288,6 +288,22 @@
   gap: 6px;
   height: 48px;
 }
+/* Interim sizing until A6's portrait visuals. */
+.nav-voice-container .voice-dropdown-panel .avatar-portrait {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.nav-voice-container .voice-dropdown-panel .avatar-portrait video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.nav-voice-container .voice-dropdown-panel .avatar-portrait audio {
+  display: none;
+}
 .nav-voice-container .voice-dropdown-panel .waveform-container .wave-bar {
   width: 4px;
   height: 12px;
