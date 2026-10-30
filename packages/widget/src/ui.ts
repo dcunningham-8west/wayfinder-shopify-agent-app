@@ -101,7 +101,10 @@ export function mountUi(root: HTMLElement): WidgetUi {
     },
     setTranscript(speaker, text) {
       if (speakerLabel) speakerLabel.textContent = speaker;
-      if (transcriptText) transcriptText.textContent = text;
+      if (transcriptText) {
+        transcriptText.textContent = text;
+        transcriptText.scrollTop = transcriptText.scrollHeight;
+      }
     },
     minimise,
     onStart(handler) {

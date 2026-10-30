@@ -357,6 +357,11 @@
 .nav-voice-container .voice-dropdown-panel .transcript-preview .transcript-text {
   margin: 0;
   color: #f3f4f6;
+  /* Fixed, not max: the panel above (avatar) must not move as a turn grows. */
+  line-height: 1.5;
+  height: 6em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .nav-voice-container .voice-dropdown-panel {
   /* Chat Thread Container (Text Mode) */
