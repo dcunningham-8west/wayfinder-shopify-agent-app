@@ -1,7 +1,7 @@
 ---
 id: A5
 title: Widget avatar core
-state: open
+state: closed
 assignee:
 blocked_by: [A1, A2, A4]
 ---
