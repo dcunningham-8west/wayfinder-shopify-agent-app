@@ -1,4 +1,11 @@
-import type { CartSnapshot, FormSubmissionResult, PageContext, TargetId } from '@wayfinder/contracts';
+import type {
+  CallLegRequest,
+  CallLegResponse,
+  CartSnapshot,
+  FormSubmissionResult,
+  PageContext,
+  TargetId,
+} from '@wayfinder/contracts';
 import type { WidgetConfig } from './config.js';
 
 /**
@@ -129,7 +136,7 @@ export class SessionClient {
         action_targets: actionTargets,
         form_results: formResults,
         cart,
-      }),
+      } satisfies CallLegRequest),
     });
 
     if (response.status === 404) {
@@ -142,19 +149,13 @@ export class SessionClient {
     if (response.status === 503) return 'voice_not_configured';
     if (!response.ok) return 'failed';
 
-    const body = (await response.json()) as {
-      call_leg_id: string;
-      access_token: string;
-      call_id: string;
-      transport: string;
-      ice_servers: RTCIceServer[];
-    };
+    const body = (await response.json()) as CallLegResponse;
     return {
       callLegId: body.call_leg_id,
       accessToken: body.access_token,
       callId: body.call_id,
       transport: body.transport,
-      iceServers: body.ice_servers,
+      iceServers: body.ice_servers as RTCIceServer[],
     };
   }
 

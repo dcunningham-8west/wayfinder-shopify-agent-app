@@ -15,9 +15,13 @@ export interface Config {
   shopifyAdminToken: string;
   /** The custom storefront domain, and nothing else; comma-separated. */
   allowedOrigins: string[];
+  /** Section 13. Absent means the avatar is off, not broken. */
+  simli?: { apiKey: string; faceId: string };
 }
 
 export function loadConfig(): Config {
+  const simliApiKey = process.env.SIMLI_API_KEY;
+  const simliFaceId = process.env.SIMLI_FACE_ID;
   return {
     port: Number(process.env.PORT ?? 3000),
     retellApiKey: required('RETELL_API_KEY'),
@@ -28,5 +32,6 @@ export function loadConfig(): Config {
       .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean),
+    simli: simliApiKey && simliFaceId ? { apiKey: simliApiKey, faceId: simliFaceId } : undefined,
   };
 }

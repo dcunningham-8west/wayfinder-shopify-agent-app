@@ -114,6 +114,42 @@ export const SEED_TOKEN_BUDGET = 4000;
 export const SEED_SHED_ORDER = ['verbatim_tail', 'session_state', 'catalogue_digest'] as const;
 export type SheddableSeedComponent = (typeof SEED_SHED_ORDER)[number];
 
+/** Section 13. Absent means this Call Leg is voice-only; never an error. */
+export const AvatarGrant = z.object({ session_token: z.string().min(1) }).strict();
+export type AvatarGrant = z.infer<typeof AvatarGrant>;
+
+/** Retell's shape, passed through to the browser untouched. */
+const IceServer = z
+  .object({ urls: z.union([z.string(), z.array(z.string())]) })
+  .passthrough();
+
+export const CallLegResponse = z
+  .object({
+    call_leg_id: CallLegId,
+    access_token: z.string().min(1),
+    call_id: z.string().min(1),
+    transport: z.string().min(1),
+    ice_servers: z.array(IceServer).default([]),
+    avatar: AvatarGrant.optional(),
+  })
+  .strict();
+export type CallLegResponse = z.infer<typeof CallLegResponse>;
+
+export const CallLegRequest = z
+  .object({
+    page_context: PageContext.optional(),
+    action_targets: ActionTargetIds.default([]),
+    form_results: FormSubmissionResults.default([]),
+    cart: CartSnapshot,
+    /** Asked for only when the merchant enabled it and the shopper hasn't hidden it. */
+    avatar: z.boolean().optional(),
+  })
+  .strict();
+export type CallLegRequest = z.input<typeof CallLegRequest>;
+
+export const AvatarTokenResponse = AvatarGrant;
+export type AvatarTokenResponse = AvatarGrant;
+
 export const TIMING = {
   /** Churn during rapid navigation. */
   settleBeforeLegMs: 2_000,

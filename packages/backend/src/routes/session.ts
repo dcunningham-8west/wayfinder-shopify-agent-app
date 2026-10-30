@@ -3,6 +3,7 @@ import {
   CartSnapshot,
   FormSubmissionResults,
   PageContext,
+  type CallLegResponse,
   type SessionId,
 } from '@wayfinder/contracts';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -115,8 +116,8 @@ export function registerSessionRoutes(
       access_token: call.accessToken,
       call_id: call.callId,
       transport: call.transport,
-      ice_servers: call.iceServers,
-    });
+      ice_servers: call.iceServers as CallLegResponse['ice_servers'],
+    } satisfies CallLegResponse);
   });
 }
 

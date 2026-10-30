@@ -1,7 +1,7 @@
 ---
 id: A1
 title: Avatar contracts and config
-state: open
+state: closed
 assignee:
 blocked_by: []
 ---
