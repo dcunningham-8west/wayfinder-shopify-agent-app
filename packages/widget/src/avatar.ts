@@ -3,7 +3,7 @@
 export type AvatarState = 'off' | 'starting' | 'live' | 'failed';
 
 export interface SimliLike {
-  on(event: 'error' | 'startup_error' | 'stop', callback: (detail: unknown) => void): void;
+  on(event: 'error' | 'startup_error' | 'stop' | 'speaking', callback: (detail: unknown) => void): void;
   start(): Promise<void>;
   stop(): Promise<void>;
   listenToMediastreamTrack(track: MediaStreamTrack): void;
@@ -26,6 +26,7 @@ export class AvatarController {
   #simli: SimliLike | undefined;
   #generation = 0;
   #state: AvatarState = 'off';
+  #stopProbe: (() => void) | undefined;
 
   constructor(private readonly deps: AvatarDeps) {}
 
@@ -67,6 +68,7 @@ export class AvatarController {
       const track = this.deps.agentTrack();
       if (!track) throw new Error('no agent audio track');
       simli.listenToMediastreamTrack(track);
+      if (globalThis.localStorage?.getItem('wayfinder:avatar-debug') === '1') this.#stopProbe = probeLipSyncLag(simli, track);
       settled = true;
       this.#setState('live');
     } catch (error) {
@@ -102,6 +104,8 @@ export class AvatarController {
   #drop(): void {
     const simli = this.#simli;
     this.#simli = undefined;
+    this.#stopProbe?.();
+    this.#stopProbe = undefined;
     // Fire-and-forget: pagehide won't wait, and maxIdleTime is the backstop.
     simli?.stop().catch(() => {});
   }
@@ -118,4 +122,46 @@ export class AvatarController {
     this.#state = state;
     this.deps.onState(state);
   }
+}
+
+const SPEECH_RMS = 0.02;
+const SILENCE_BEFORE_ONSET_MS = 300;
+
+/** Debug only: logs ms from agent audio onset (the voice the shopper hears) to Simli's `speaking`. */
+function probeLipSyncLag(simli: SimliLike, track: MediaStreamTrack): () => void {
+  const ctx = new AudioContext();
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 512;
+  ctx.createMediaStreamSource(new MediaStream([track])).connect(analyser);
+  const samples = new Float32Array(analyser.fftSize);
+  let lastLoud = 0;
+  let onset: number | undefined;
+  let frame = 0;
+  let active = true;
+
+  const tick = (): void => {
+    if (!active) return;
+    analyser.getFloatTimeDomainData(samples);
+    let sum = 0;
+    for (const s of samples) sum += s * s;
+    const now = performance.now();
+    if (Math.sqrt(sum / samples.length) > SPEECH_RMS) {
+      if (now - lastLoud > SILENCE_BEFORE_ONSET_MS) onset = now;
+      lastLoud = now;
+    }
+    frame = requestAnimationFrame(tick);
+  };
+  tick();
+
+  simli.on('speaking', () => {
+    if (!active || onset === undefined) return;
+    console.info(`[wayfinder] avatar lip-sync lag ${Math.round(performance.now() - onset)} ms`);
+    onset = undefined;
+  });
+
+  return () => {
+    active = false;
+    cancelAnimationFrame(frame);
+    void ctx.close();
+  };
 }
