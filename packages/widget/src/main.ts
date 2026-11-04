@@ -108,7 +108,9 @@ function boot(): void {
           default?: typeof import('simli-client');
         };
         const { SimliClient, LogLevel } = mod.default ?? mod;
-        const simli = new SimliClient(token, video, audio, null, LogLevel.ERROR, 'livekit', 'websockets', undefined, 800);
+        const tuning = await import('./avatar-tuning.prototype.js');
+        const bufferSize = tuning.tuningEnabled() ? tuning.tunedBufferSize() : 800;
+        const simli = new SimliClient(token, video, audio, null, LogLevel.ERROR, 'livekit', 'websockets', undefined, bufferSize);
         return {
           on: (event, callback) => simli.on(event, callback),
           start: () => simli.start(),

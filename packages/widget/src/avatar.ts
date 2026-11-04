@@ -1,5 +1,7 @@
 /** Section 13. Simli renders the face; Retell keeps the voice, so nothing here touches audio out. */
 
+import { createTunedTrack, tuningEnabled } from './avatar-tuning.prototype.js';
+
 export type AvatarState = 'off' | 'starting' | 'live' | 'failed';
 
 export interface SimliLike {
@@ -67,11 +69,10 @@ export class AvatarController {
       if (settled || generation !== this.#generation) return void (await retry);
       const track = this.deps.agentTrack();
       if (!track) throw new Error('no agent audio track');
-      const gain = Number(globalThis.localStorage?.getItem('wayfinder:avatar-gain'));
-      if (gain > 0) {
-        const conditioned = conditionAudio(track, gain);
-        this.#closeConditioner = conditioned.close;
-        simli.listenToMediastreamTrack(conditioned.track);
+      if (tuningEnabled()) {
+        const tuned = createTunedTrack(track);
+        this.#closeConditioner = tuned.close;
+        simli.listenToMediastreamTrack(tuned.track);
       } else {
         simli.listenToMediastreamTrack(track);
       }
@@ -128,17 +129,4 @@ export class AvatarController {
     this.#state = state;
     this.deps.onState(state);
   }
-}
-
-/** Experiment: compress + boost Simli's copy of the agent audio. The shopper's playback is untouched. */
-function conditionAudio(track: MediaStreamTrack, gain: number): { track: MediaStreamTrack; close: () => void } {
-  const ctx = new AudioContext({ sampleRate: 16_000 });
-  const compressor = ctx.createDynamicsCompressor();
-  compressor.threshold.value = -30;
-  compressor.ratio.value = 6;
-  const boost = ctx.createGain();
-  boost.gain.value = gain;
-  const out = ctx.createMediaStreamDestination();
-  ctx.createMediaStreamSource(new MediaStream([track])).connect(compressor).connect(boost).connect(out);
-  return { track: out.stream.getAudioTracks()[0]!, close: () => void ctx.close() };
 }
