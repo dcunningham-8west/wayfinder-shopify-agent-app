@@ -109,6 +109,14 @@ function mountPanel(): void {
     'position:fixed;left:12px;bottom:12px;z-index:2147483647;width:300px;padding:10px;background:#111;color:#eee;' +
     'font:12px/1.4 monospace;border-radius:6px;box-shadow:0 2px 12px #0008;max-height:90vh;overflow:auto';
   document.body.append(panel);
+  // Window capture runs before the widget's document-level "click outside minimises" listener.
+  window.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (panel?.contains(event.target as Node)) event.stopPropagation();
+    },
+    true,
+  );
   render();
 }
 
