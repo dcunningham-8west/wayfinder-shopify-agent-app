@@ -3,8 +3,11 @@
 .nav-voice-container {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centred without transform so the preview panel can be fixed to the viewport. */
+  left: 0;
+  right: 0;
+  width: fit-content;
+  margin-inline: auto;
   z-index: 999; /* just below Dawn's cart drawer (1000) */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   transition: bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s ease;
@@ -13,8 +16,11 @@
 .nav-voice-container.is-scrolled-fixed {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+}
+.nav-voice-container.is-preview-open {
+  left: auto;
+  right: 24px;
+  margin-inline: 0;
 }
 .nav-voice-container {
   /* Viewport strictly clips to one pill width */
@@ -698,11 +704,11 @@
   z-index: 1;
 }
 .nav-voice-container .preview-panel {
-  position: absolute;
+  position: fixed;
   width: 88vw;
   height: 75vh;
   left: 50%;
-  bottom: -24px;
+  bottom: 0;
   transform: translateX(-50%) scaleY(0);
   transform-origin: bottom center; /* Forces growth upward */
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
