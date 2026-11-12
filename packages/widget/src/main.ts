@@ -1,5 +1,6 @@
 import { ActionSocket } from './action-socket.js';
 import { readCartSnapshot } from './cart-snapshot.js';
+import { ChatController } from './chat.js';
 import { loadConfig } from './config.js';
 import {
   clearFormResults,
@@ -9,6 +10,7 @@ import {
   readPageContext,
 } from './page-context.js';
 import { mountPreviewPanel } from './preview-panel.js';
+import { readMode, writeMode } from './mode.js';
 import { SessionClient, takeAgentNavigationMarker } from './session-client.js';
 import { setAgentTalking } from './speech.js';
 import { mountUi } from './ui.js';
@@ -62,9 +64,29 @@ function boot(): void {
   const sessions = new SessionClient(config);
   const socket = new ActionSocket(config);
 
+  let mode = readMode();
+  ui.setMode(mode);
   let voice: VoiceClient | undefined;
   let avatar: AvatarController | undefined;
   let starting = false;
+
+  const chat = new ChatController({
+    sessions,
+    ui,
+    page: {
+      pageContext: readPageContext,
+      cart: readCartSnapshot,
+      actionTargets: readActionTargets,
+      formResults: readFormResults,
+      clearFormResults,
+    },
+    openSocket: (handle) => socket.open(handle),
+    closeSocket: () => socket.close(),
+    follow: (text) => preview?.follow(text),
+    warn,
+    retryDelayMs: TIMING.minBetweenLegsMs,
+  });
+  ui.onSend((text) => void chat.send(text));
 
   // The backend relays Retell's live transcript; the SDK no longer delivers it to the page.
   socket.onTranscript((turn) => {
@@ -152,6 +174,10 @@ function boot(): void {
   }
 
   async function start(reconnecting = false): Promise<'rate_limited' | undefined> {
+    if (mode === 'chat') {
+      if (!chat.live) await chat.start();
+      return undefined;
+    }
     if (voice?.live) {
       if (!reconnecting) unlockAudio();
       return undefined;
@@ -252,17 +278,29 @@ function boot(): void {
   });
 
   ui.onStart(() => void start());
-  ui.onEnd(() => {
+  function endSession(): void {
     avatar?.stop();
     voice?.stop();
+    chat.stop();
     socket.close();
     preview?.hide();
     void sessions.end().catch((error: unknown) => warn('session end failed', error));
+  }
+  ui.onEnd(endSession);
+  // A switch is a fresh Session; switching to voice waits for the mic button, chat needs no permission.
+  ui.onModeToggle(() => {
+    endSession();
+    ui.setTranscript('Assistant', '');
+    ui.setStatus('READY');
+    mode = mode === 'chat' ? 'voice' : 'chat';
+    writeMode(mode);
+    ui.setMode(mode);
+    if (mode === 'chat') void chat.start();
   });
 
   // Standby costs nothing: a facet change updates the copy the next Seed will carry.
   observePageContext((pageContext) => {
-    if (voice?.live) socket.sendPageContext(pageContext, true);
+    if (voice?.live || chat.live) socket.sendPageContext(pageContext, true);
   });
 
   window.addEventListener('pagehide', () => {
@@ -271,7 +309,13 @@ function boot(): void {
     socket.close();
   });
 
-  void reconnectAfterAgentNavigation();
+  // Chat needs no mic permission, so an existing chat Session always resumes.
+  if (mode === 'chat') {
+    takeAgentNavigationMarker();
+    if (sessions.handle) void chat.start();
+  } else {
+    void reconnectAfterAgentNavigation();
+  }
 }
 
 if (document.readyState === 'loading') {

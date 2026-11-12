@@ -660,21 +660,65 @@
   background: rgb(229.5, 229.5, 229.5);
 }
 .nav-voice-container .voice-dropdown-panel {
-  /* CHAT MODE STATE MODIFIER */
+  /* CHAT MODE STATE MODIFIER: on the container, set by the widget from `wayfinder:mode` */
 }
-.nav-voice-container .voice-dropdown-panel.is-chat-mode .waveform-container,
-.nav-voice-container .voice-dropdown-panel.is-chat-mode .transcript-preview,
-.nav-voice-container .voice-dropdown-panel.is-chat-mode .panel-controls {
-  display: none !important;
+.nav-voice-container .voice-dropdown-panel .chat-form {
+  display: none;
+  margin-bottom: 12px;
 }
-.nav-voice-container .voice-dropdown-panel.is-chat-mode .chat-thread-container {
-  display: flex !important;
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .chat-form,
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .send-msg-btn {
+  display: flex;
 }
-.nav-voice-container .voice-dropdown-panel.is-chat-mode .switch-mode-btn {
-  display: flex !important;
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .transcript-preview {
+  display: block;
+  margin-bottom: 12px;
 }
-.nav-voice-container .voice-dropdown-panel.is-chat-mode .send-msg-btn {
-  display: flex !important;
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .transcript-preview .speaker-label {
+  display: none;
+}
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .transcript-preview .transcript-text {
+  height: 14em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nav-voice-container .voice-dropdown-panel .chat-line {
+  margin: 0;
+  max-width: 85%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.nav-voice-container .voice-dropdown-panel .chat-line--agent,
+.nav-voice-container .voice-dropdown-panel .chat-line--typing {
+  align-self: flex-start;
+  background: #14171a;
+}
+.nav-voice-container .voice-dropdown-panel .chat-line--shopper {
+  align-self: flex-end;
+  background: #ffffff;
+  color: black;
+}
+.nav-voice-container .voice-dropdown-panel .chat-line--notice {
+  align-self: center;
+  color: #9ca3af;
+  font-style: italic;
+}
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .waveform-container,
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .avatar-portrait,
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .mute-btn,
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .subtitles-btn,
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .avatar-btn {
+  display: none;
+}
+.nav-voice-container .voice-dropdown-panel .mode-btn .icon-voice,
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .mode-btn .icon-chat {
+  display: none;
+}
+.nav-voice-container.is-chat-mode .voice-dropdown-panel .mode-btn .icon-voice {
+  display: block;
 }
 .nav-voice-container {
   /* Active Container State */

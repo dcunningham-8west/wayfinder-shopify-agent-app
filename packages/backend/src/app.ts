@@ -5,6 +5,7 @@ import { AvatarMinter } from './avatar/avatar-minter.js';
 import { SimliAvatarProvider } from './avatar/simli-provider.js';
 import { ActionChannel } from './actions/action-channel.js';
 import { CatalogueIndex } from './catalogue/catalogue-index.js';
+import { RetellChatProvider } from './chat/chat-provider.js';
 import { LexicalRanker } from './catalogue/lexical-ranker.js';
 import { fetchCatalogue, fetchCollectionDestinations, fetchLiveFacts, fetchPageDestinations } from './catalogue/shopify.js';
 import { loadConfig } from './config.js';
@@ -57,6 +58,9 @@ export async function buildServer(config = loadConfig()) {
     transcripts: new TranscriptRelay(config.retellApiKey, sessions, actions, app.log),
     avatar: config.simli
       ? new AvatarMinter(new SimliAvatarProvider(config.simli.apiKey, config.simli.faceId))
+      : undefined,
+    chat: config.retellChatAgentId
+      ? new RetellChatProvider(config.retellApiKey, config.retellChatAgentId)
       : undefined,
   });
 

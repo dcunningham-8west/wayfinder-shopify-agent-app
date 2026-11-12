@@ -11,6 +11,8 @@ export interface Config {
   retellApiKey: string;
   /** Absent until the agent exists; Call Leg creation reports that rather than failing oddly. */
   retellAgentId?: string;
+  /** Section 14. Absent means chat is off. */
+  retellChatAgentId?: string;
   shopifyStoreDomain: string;
   shopifyAdminToken: string;
   /** The custom storefront domain, and nothing else; comma-separated. */
@@ -26,6 +28,7 @@ export function loadConfig(): Config {
     port: Number(process.env.PORT ?? 3000),
     retellApiKey: required('RETELL_API_KEY'),
     retellAgentId: process.env.RETELL_AGENT_ID,
+    retellChatAgentId: process.env.RETELL_CHAT_AGENT_ID,
     shopifyStoreDomain: required('SHOPIFY_STORE_DOMAIN'),
     shopifyAdminToken: required('SHOPIFY_ADMIN_TOKEN'),
     allowedOrigins: (process.env.ALLOWED_ORIGINS ?? '')

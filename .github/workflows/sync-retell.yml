@@ -36,5 +36,7 @@ jobs:
           RETELL_API_KEY: ${{ secrets.RETELL_API_KEY }}
           RETELL_AGENT_ID: ${{ secrets.RETELL_AGENT_ID }}
           RETELL_LLM_ID: ${{ secrets.RETELL_LLM_ID }}
+          RETELL_CHAT_AGENT_ID: ${{ secrets.RETELL_CHAT_AGENT_ID }}
+          RETELL_CHAT_LLM_ID: ${{ secrets.RETELL_CHAT_LLM_ID }}
           BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
         run: npm run sync:ci --workspace packages/retell

@@ -13,6 +13,8 @@ import type {
 import { MAX_SESSIONS_IN_MEMORY, REFERENT_SET_CAPACITY, TIMING } from '@wayfinder/contracts';
 
 const AVATAR_TOKEN_MIN_INTERVAL_MS = 10_000;
+const CHAT_MESSAGE_MIN_INTERVAL_MS = 1_000;
+const TRANSCRIPT_TURN_MAX_CHARS = 2000;
 
 /**
  * Section 03 and ticket 014: the backend stores nothing at rest. A Session is a process-local
@@ -40,6 +42,9 @@ export interface Session {
   staged?: StagedResults;
   /** Sticky for the Session once the shopper picks how to see results. */
   presentation?: 'preview' | 'on_page';
+  /** The current Chat Leg; its id is also `currentLegId`. */
+  chat?: { legId: CallLegId; chatId: string; pending: boolean };
+  lastChatMessageAt?: number;
 }
 
 export interface StagedResults {
@@ -163,6 +168,20 @@ export class SessionStore {
     if (last !== undefined && this.now() - last < AVATAR_TOKEN_MIN_INTERVAL_MS) return false;
     session.lastAvatarTokenAt = this.now();
     return true;
+  }
+
+  /** Takes the slot when allowed: every chat message is a billed completion. */
+  takeChatMessageSlot(session: Session): boolean {
+    const last = session.lastChatMessageAt;
+    if (last !== undefined && this.now() - last < CHAT_MESSAGE_MIN_INTERVAL_MS) return false;
+    session.lastChatMessageAt = this.now();
+    return true;
+  }
+
+  /** Turns past the cap are cut, not rejected: the agent already said them. */
+  appendTurns(session: Session, turns: TranscriptTurn[]): void {
+    session.transcript.push(...turns.map((t) => ({ ...t, text: t.text.slice(0, TRANSCRIPT_TURN_MAX_CHARS) })));
+    session.lastSeenAt = this.now();
   }
 
   #isExpired(session: Session): boolean {

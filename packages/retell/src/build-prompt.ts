@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { toolDefinitions } from '@wayfinder/contracts';
+import { type Channel, toolDefinitions } from '@wayfinder/contracts';
 
 /**
  * Section 07. Four hand-authored files plus tool text generated from `contracts`, so the
@@ -10,9 +10,14 @@ import { toolDefinitions } from '@wayfinder/contracts';
 
 const PROMPTS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'prompts');
 
-function authored(): string {
+const CHANNEL_FILES: Record<Channel, string> = { voice: '20-voice.md', chat: '20-chat.md' };
+
+function authored(channel: Channel): string {
+  const otherChannels = Object.entries(CHANNEL_FILES)
+    .filter(([c]) => c !== channel)
+    .map(([, f]) => f);
   return readdirSync(PROMPTS_DIR)
-    .filter((f) => f.endsWith('.md'))
+    .filter((f) => f.endsWith('.md') && !otherChannels.includes(f))
     .sort()
     .map((f) => readFileSync(join(PROMPTS_DIR, f), 'utf8').trim())
     .join('\n\n');
@@ -54,6 +59,6 @@ const SEED_SECTION = [
   '{{wayfinder_seed}}',
 ].join('\n');
 
-export function buildPrompt(): string {
-  return [authored(), generatedToolGuidance(), SEED_SECTION].join('\n\n');
+export function buildPrompt(channel: Channel): string {
+  return [authored(channel), generatedToolGuidance(), SEED_SECTION].join('\n\n');
 }

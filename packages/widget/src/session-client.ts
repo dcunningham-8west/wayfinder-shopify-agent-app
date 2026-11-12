@@ -3,6 +3,10 @@ import type {
   CallLegRequest,
   CallLegResponse,
   CartSnapshot,
+  ChatAgentMessage,
+  ChatLegRequest,
+  ChatLegResponse,
+  ChatMessageResponse,
   FormSubmissionResult,
   PageContext,
   TargetId,
@@ -35,6 +39,14 @@ export interface CallLeg {
 }
 
 export type LegRefusal = 'rate_limited' | 'voice_not_configured' | 'unknown_session' | 'failed';
+
+export interface ChatLeg {
+  chatLegId: string;
+  messages: ChatAgentMessage[];
+}
+
+/** `stale` covers a superseded leg and a wiped Session alike: both need a new leg. */
+export type MessageRefusal = 'busy' | 'stale' | 'rate_limited' | 'failed';
 
 function remembered(): SessionHandle | undefined {
   try {
@@ -171,6 +183,67 @@ export class SessionClient {
       iceServers: body.ice_servers as RTCIceServer[],
       avatarToken: body.avatar?.session_token,
     };
+  }
+
+  async startChatLeg(
+    pageContext: PageContext,
+    cart: CartSnapshot,
+    actionTargets: TargetId[] = [],
+    formResults: FormSubmissionResult[] = [],
+    retried = false,
+  ): Promise<ChatLeg | LegRefusal> {
+    const handle = await this.ensure(pageContext);
+
+    const response = await fetch(`${this.config.backendUrl}/sessions/${handle.id}/chat-legs`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-wayfinder-session-token': handle.token,
+      },
+      body: JSON.stringify({
+        page_context: pageContext,
+        action_targets: actionTargets,
+        form_results: formResults,
+        cart,
+      } satisfies ChatLegRequest),
+    });
+
+    if (response.status === 404) {
+      this.forget();
+      if (retried) return 'unknown_session';
+      return this.startChatLeg(pageContext, cart, actionTargets, formResults, true);
+    }
+    if (response.status === 429) return 'rate_limited';
+    if (response.status === 503) return 'voice_not_configured';
+    if (!response.ok) return 'failed';
+
+    const body = (await response.json()) as ChatLegResponse;
+    return { chatLegId: body.chat_leg_id, messages: body.messages };
+  }
+
+  async sendChatMessage(chatLegId: string, content: string): Promise<ChatAgentMessage[] | MessageRefusal> {
+    const handle = this.#handle;
+    if (!handle) return 'stale';
+
+    const response = await fetch(
+      `${this.config.backendUrl}/sessions/${handle.id}/chat-legs/${encodeURIComponent(chatLegId)}/messages`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-wayfinder-session-token': handle.token },
+        body: JSON.stringify({ content }),
+      },
+    );
+    if (response.status === 404) {
+      this.forget();
+      return 'stale';
+    }
+    if (response.status === 410) return 'stale';
+    if (response.status === 409) return 'busy';
+    if (response.status === 429) return 'rate_limited';
+    if (!response.ok) return 'failed';
+
+    const body = (await response.json()) as ChatMessageResponse;
+    return body.messages;
   }
 
   /** Undefined covers every refusal: the leg simply carries on voice-only. */

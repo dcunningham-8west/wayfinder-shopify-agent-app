@@ -12,6 +12,8 @@ interface ToolWebhookBody {
   name?: unknown;
   args?: unknown;
   call?: { call_id?: string; metadata?: { session_id?: string } };
+  /** Present instead of `call` when the agent is a Chat Leg. */
+  chat?: { chat_id?: string; metadata?: { session_id?: string } };
 }
 
 export interface ToolWebhookOptions extends ToolDeps {
@@ -47,7 +49,7 @@ export async function toolWebhookPlugin(
     }
 
     const name = typeof body.name === 'string' ? body.name : '';
-    const sessionId = body.call?.metadata?.session_id as SessionId | undefined;
+    const sessionId = (body.call ?? body.chat)?.metadata?.session_id as SessionId | undefined;
     const outcome = await dispatchToolCall({ name, args: body.args ?? {}, sessionId }, deps);
 
     // Ids and outcomes only — logs never carry conversation content (ticket 014).
@@ -57,6 +59,7 @@ export async function toolWebhookPlugin(
       {
         tool: name,
         call_id: body.call?.call_id,
+        chat_id: body.chat?.chat_id,
         ok: outcome.ok,
         ...actionDetail(outcome),
         ...(sessionId ? { page_connected: deps.actions.isConnected(sessionId) } : {}),

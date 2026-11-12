@@ -5,3 +5,4 @@ export * from './tool-definitions.js';
 export * from './actions.js';
 export * from './action-definitions.js';
 export * from './session.js';
+export * from './chat.js';

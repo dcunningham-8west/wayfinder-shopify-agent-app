@@ -39,6 +39,7 @@ rationale for *why* lives in the ticket each section links to.
 | 11 | [Disambiguation](./11-disambiguation.md) | Match quality, the Referent Set, "the second one" |
 | 12 | [Testing](./12-testing.md) | The four seams, and what is deliberately untested |
 | 13 | [Avatar](./13-avatar.md) | Optional lip-synced Simli face over the Retell voice |
+| 14 | [Chat mode](./14-chat.md) | Text chat beside voice, on a Retell chat agent |
 
 ## Status
 

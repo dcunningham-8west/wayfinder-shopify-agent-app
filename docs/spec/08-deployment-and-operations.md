@@ -142,6 +142,9 @@ runtime.
 | `SHOPIFY_ADMIN_TOKEN`, `SHOPIFY_STORE_DOMAIN` | **Render env vars** | Needed at runtime |
 | `RETELL_API_KEY` | **Render env vars** | Verifies the tool webhook ([ticket 012](../wayfinder/tickets/012-security-of-the-mutation-surface.md)). Retell signs with the API key itself — there is no separate webhook secret |
 | `RETELL_API_KEY`, `RETELL_AGENT_ID`, `RETELL_LLM_ID` | **GitHub secrets** | CI pushes prompts via `llm.update` |
+| `RETELL_AGENT_ID` | **Render env vars** | The backend creates Call Legs on this agent |
+| `RETELL_CHAT_AGENT_ID`, `RETELL_CHAT_LLM_ID` | **GitHub secrets** | CI pushes the chat prompt and agent settings ([section 14](./14-chat.md)) |
+| `RETELL_CHAT_AGENT_ID` | **Render env vars** | The backend creates Chat Legs on this agent |
 | Shopify CLI theme token (`shptka_`) | **GitHub secrets** | CI pushes the theme. A **separate credential** from the Admin token: issued by the Theme Access app, scoped to theme files only |
 | All of the above | **Local `.env`**, gitignored | Development |
 | Storefront password | **Operator only** | Never needed by code |
